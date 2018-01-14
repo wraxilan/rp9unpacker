@@ -11,7 +11,7 @@ import constants as const
 
 from config import Config
 from pathlib import Path
-from PyQt5.QtWidgets import QLabel, QLineEdit, QMainWindow, QPushButton, QWidget, QVBoxLayout, QAction
+from PyQt5.QtWidgets import QLabel, QLineEdit, QMainWindow, QDialog, QLineEdit, QPushButton, QWidget, QHBoxLayout, QVBoxLayout, QAction
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSlot
 
@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self, *args):
         QMainWindow.__init__(self, *args)
-        self.setWindowTitle(_('rp9UnpAckEr ' + const.VERSION))
+        self.setWindowTitle(_('rp9UnpAckEr for FS-UAE ' + const.VERSION))
         self.setWindowIcon(QIcon(str(Path(__file__).parents[0].joinpath('images').joinpath('amigaball.png'))))
 
         # load config
@@ -56,6 +56,7 @@ class MainWindow(QMainWindow):
         # Connects
         self.update_text_button.clicked.connect(self.update_text)
         self.about_action.triggered.connect(self.show_about_dialog)
+        self.exit_action.triggered.connect(self.close)
 
         # Layout
         main_widget = QWidget()
@@ -73,7 +74,25 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def show_about_dialog(self):
-        print('akjsdghkjhgasd')
+        #QMessageBox.information(self, 'Test', 'Test\nTest!')
+        dialog = QDialog(self)
+        eingabe = QLineEdit(dialog)
+        ok_button = QPushButton('OK', dialog)
+
+        layout = QHBoxLayout()
+        layout.addWidget(eingabe)
+        layout.addWidget(ok_button)
+        dialog.setLayout(layout)
+        ok_button.clicked.connect(dialog.accept)
+        #buttonAbbrechen.clicked.connect(dialog.reject)
+
+        dialog.resize(600, 400)
+        result = dialog.exec_()
+        #if result == QDialog.Accepted:
+        #    eingabe = str(eingabe.text())
+        #    print(eingabe)
+        #else:
+        #    print("Abgebrochen")
 
     def closeEvent(self, event):
         self.config.mainwindow_witdh = self.width()

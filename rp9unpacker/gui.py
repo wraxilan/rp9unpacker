@@ -11,13 +11,17 @@ import constants as const
 
 from config import Config
 from pathlib import Path
-from PyQt5.QtWidgets import QLabel, QLineEdit, QMainWindow, QDialog, QLineEdit, QPushButton, QWidget, QHBoxLayout, QVBoxLayout, QAction
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtWidgets import QLabel, QPlainTextEdit, QMainWindow, QDialog, QLineEdit, QPushButton, QWidget, QHBoxLayout, QVBoxLayout, QAction, QSizePolicy
+from PyQt5.QtGui import QIcon, QPixmap, QTextCursor
+from PyQt5.QtCore import pyqtSlot, Qt
+
 
 localedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'locales')
 translate = gettext.translation('gui', localedir, fallback=True)
 _ = translate.gettext
+
+images_path = Path(__file__).parents[0].joinpath('images')
+resources_path = Path(__file__).parents[0].joinpath('resources')
 
 
 class MainWindow(QMainWindow):
@@ -25,7 +29,7 @@ class MainWindow(QMainWindow):
     def __init__(self, *args):
         QMainWindow.__init__(self, *args)
         self.setWindowTitle(_('rp9UnpAckEr for FS-UAE ' + const.VERSION))
-        self.setWindowIcon(QIcon(str(Path(__file__).parents[0].joinpath('images').joinpath('amigaball.png'))))
+        self.setWindowIcon(QIcon(str(images_path.joinpath('amigaball.png'))))
 
         # load config
         self.config = Config()
@@ -74,20 +78,65 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def show_about_dialog(self):
-        #QMessageBox.information(self, 'Test', 'Test\nTest!')
         dialog = QDialog(self)
-        eingabe = QLineEdit(dialog)
+        #eingabe = QLineEdit(dialog)
+        # ok_button = QPushButton('OK', dialog)
+        #layout.addWidget(ok_button)
+
+        dlglyt = QVBoxLayout()
+        dialog.setLayout(dlglyt)
+
+        info = QWidget()
+        infolyt = QHBoxLayout()
+        info.setLayout(infolyt)
+        dlglyt.addWidget(info)
+
+        pixmap = QPixmap(str(images_path.joinpath('amigaballsmall.png')))
+        lbl = QLabel(self)
+        lbl.setPixmap(pixmap)
+        infolyt.addWidget(lbl)
+
+        text = QWidget()
+        textlyt = QVBoxLayout()
+        text.setLayout(textlyt)
+        infolyt.addWidget(text)
+        l1 = QLabel(_('rp9UnpAckEr for FS-UAE ' + const.VERSION))
+        l1.setStyleSheet("font: bold")
+        l2 = QLabel(_('Copyright © 2018 Jens Kieselbach'))
+        textlyt.addWidget(l1)
+        textlyt.addWidget(l2)
+        infolyt.addStretch()
+
+        textedit = QPlainTextEdit(self)
+
+        try:
+            file = open(resources_path.joinpath('LICENSE'), 'r', encoding="utf-8")
+            textedit.insertPlainText(file.read())
+        except Exception as e:
+            textedit.insertPlainText(str(e))
+
+        textedit.moveCursor(QTextCursor.Start)
+        textedit.setTextInteractionFlags(Qt.TextSelectableByKeyboard | Qt.TextSelectableByMouse)
+        textedit.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
+        dlglyt.addWidget(textedit)
+
+        button = QWidget()
+        buttonlyt = QHBoxLayout()
+        button.setLayout(buttonlyt)
+        dlglyt.addWidget(button)
         ok_button = QPushButton('OK', dialog)
+        # ok_button.setSizePolicy(QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed))
+        buttonlyt.addStretch()
+        buttonlyt.addWidget(ok_button)
+        buttonlyt.addStretch()
 
-        layout = QHBoxLayout()
-        layout.addWidget(eingabe)
-        layout.addWidget(ok_button)
-        dialog.setLayout(layout)
+        dialog.resize(550, 400)
+        ok_button.setFocus()
         ok_button.clicked.connect(dialog.accept)
-        #buttonAbbrechen.clicked.connect(dialog.reject)
+        dialog.exec_()
 
-        dialog.resize(600, 400)
-        result = dialog.exec_()
+        #
+        # result = dialog.exec_()
         #if result == QDialog.Accepted:
         #    eingabe = str(eingabe.text())
         #    print(eingabe)

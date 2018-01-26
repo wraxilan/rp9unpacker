@@ -1,11 +1,11 @@
 # Creates a pot file from a python file
-pygettext3 -d locales/$FileNameWithoutAllExtensions$ $FileName$
+pygettext3 --no-location -d $FileDir$/locales/$FileNameWithoutAllExtensions$ $FileName$
 
 # Creates a po file from a pot file
-msginit --no-translator --input=$FileName$ --locale=de_DE --output=de_DE/LC_MESSAGES/$FileNameWithoutAllExtensions$.po
+--no-translator --input=$FilePath$ --locale=de_DE --output=$FileDir$/de_DE/LC_MESSAGES/$FileNameWithoutAllExtensions$.po
 
 # Updates a po file from a pot file
-msgmerge --update de_DE/LC_MESSAGES/$FileNameWithoutAllExtensions$.po $FileName$
+msgmerge --update $FileDir$/de_DE/LC_MESSAGES/$FileNameWithoutAllExtensions$.po $FilePath$
 
 # Compiles / Creates a mo file from a po file
-msgfmt -o $FileNameWithoutAllExtensions$.mo $FileName$
+msgfmt -o $FileDir$/$FileNameWithoutAllExtensions$.mo $FilePath$

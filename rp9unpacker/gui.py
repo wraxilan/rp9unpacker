@@ -6,29 +6,91 @@
 
 import gettext
 import os
-
 import constants as const
 
 from config import Config
 from pathlib import Path
-from PyQt5.QtWidgets import QLabel, QPlainTextEdit, QMainWindow, QDialog, QLineEdit, QPushButton, QWidget, QHBoxLayout, QVBoxLayout, QAction, QSizePolicy
+from PyQt5.QtWidgets import QLabel, QPlainTextEdit, QMainWindow, QDialog, QListWidget, QPushButton, QWidget, QListWidgetItem, QHBoxLayout, QVBoxLayout, QAction, QSizePolicy
 from PyQt5.QtGui import QIcon, QPixmap, QTextCursor
 from PyQt5.QtCore import pyqtSlot, Qt
 
+images_path = Path(__file__).parents[0].joinpath('images')
+resources_path = Path(__file__).parents[0].joinpath('resources')
 
 localedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'locales')
 translate = gettext.translation('gui', localedir, fallback=True)
 _ = translate.gettext
 
-images_path = Path(__file__).parents[0].joinpath('images')
-resources_path = Path(__file__).parents[0].joinpath('resources')
+
+class AboutDialog(QDialog):
+
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        dlglyt = QVBoxLayout()
+        self.setLayout(dlglyt)
+
+        info = QWidget()
+        infolyt = QHBoxLayout()
+        info.setLayout(infolyt)
+        dlglyt.addWidget(info)
+
+        pixmap = QPixmap(str(images_path.joinpath('amigaballsmall.png')))
+        lbl = QLabel(self)
+        lbl.setPixmap(pixmap)
+        infolyt.addWidget(lbl)
+
+        text = QWidget()
+        textlyt = QVBoxLayout()
+        text.setLayout(textlyt)
+        infolyt.addWidget(text)
+        appstr = _('rp9UnpAckEr for FS-UAE')
+        l1 = QLabel(appstr + ' ' + const.VERSION)
+        l1.setStyleSheet('font: bold')
+        l2 = QLabel(_('Copyright © 2018 Jens Kieselbach'))
+        textlyt.addWidget(l1)
+        textlyt.addWidget(l2)
+        infolyt.addStretch()
+
+        textedit = QPlainTextEdit(self)
+
+        try:
+            file = open(resources_path.joinpath('LICENSE'), 'r', encoding="utf-8")
+            textedit.insertPlainText(file.read())
+        except Exception as e:
+            textedit.insertPlainText(str(e))
+
+        textedit.moveCursor(QTextCursor.Start)
+        textedit.setTextInteractionFlags(Qt.TextSelectableByKeyboard | Qt.TextSelectableByMouse)
+        textedit.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
+        textedit.setStyleSheet('font: 9pt "Monospace"')
+        # nameEdit->setStyleSheet("color: blue;"
+        #                        "background-color: yellow;"
+        #                        "selection-color: yellow;"
+        #                        "selection-background-color: blue;");
+        dlglyt.addWidget(textedit)
+
+        button = QWidget()
+        buttonlyt = QHBoxLayout()
+        button.setLayout(buttonlyt)
+        dlglyt.addWidget(button)
+        ok_button = QPushButton(QIcon.fromTheme('ok'), 'OK', self)
+        # ok_button.setSizePolicy(QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed))
+        buttonlyt.addStretch()
+        buttonlyt.addWidget(ok_button)
+        buttonlyt.addStretch()
+
+        self.resize(600, 400)
+        ok_button.setFocus()
+        ok_button.clicked.connect(self.accept)
 
 
 class MainWindow(QMainWindow):
 
     def __init__(self, *args):
         QMainWindow.__init__(self, *args)
-        self.setWindowTitle(_('rp9UnpAckEr for FS-UAE ' + const.VERSION))
+        appstr = _('rp9UnpAckEr for FS-UAE')
+        self.setWindowTitle(appstr + ' ' + const.VERSION)
         self.setWindowIcon(QIcon(str(images_path.joinpath('amigaball.png'))))
 
         # load config
@@ -53,12 +115,10 @@ class MainWindow(QMainWindow):
         help_menu.addAction(self.about_action)
 
         # Widgets
-        self.hello_world_label = QLabel(_('Hello World!'))
-        self.update_text_button = QPushButton(_('Update'))
-        self.edit_text = QLineEdit()
+        self.file_list = QListWidget()
 
         # Connects
-        self.update_text_button.clicked.connect(self.update_text)
+        # self.update_text_button.clicked.connect(self.update_text)
         self.about_action.triggered.connect(self.show_about_dialog)
         self.exit_action.triggered.connect(self.close)
 
@@ -68,9 +128,13 @@ class MainWindow(QMainWindow):
         main_layout = QVBoxLayout()
         main_widget.setLayout(main_layout)
 
-        main_layout.addWidget(self.hello_world_label)
-        main_layout.addWidget(self.edit_text)
-        main_layout.addWidget(self.update_text_button)
+        main_layout.addWidget(self.file_list)
+        #main_layout.addWidget(self.edit_text)
+        #main_layout.addWidget(self.update_text_button)
+
+        self.file_list.addItem(QListWidgetItem(QIcon.fromTheme('folder'), 'Test 1'))
+        self.file_list.addItem(QListWidgetItem(QIcon.fromTheme('fs-uae', QIcon.fromTheme('package-x-generic')), 'Test 2'))
+
 
     @pyqtSlot()
     def update_text(self):
@@ -78,61 +142,7 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def show_about_dialog(self):
-        dialog = QDialog(self)
-        #eingabe = QLineEdit(dialog)
-        # ok_button = QPushButton('OK', dialog)
-        #layout.addWidget(ok_button)
-
-        dlglyt = QVBoxLayout()
-        dialog.setLayout(dlglyt)
-
-        info = QWidget()
-        infolyt = QHBoxLayout()
-        info.setLayout(infolyt)
-        dlglyt.addWidget(info)
-
-        pixmap = QPixmap(str(images_path.joinpath('amigaballsmall.png')))
-        lbl = QLabel(self)
-        lbl.setPixmap(pixmap)
-        infolyt.addWidget(lbl)
-
-        text = QWidget()
-        textlyt = QVBoxLayout()
-        text.setLayout(textlyt)
-        infolyt.addWidget(text)
-        l1 = QLabel(_('rp9UnpAckEr for FS-UAE ' + const.VERSION))
-        l1.setStyleSheet("font: bold")
-        l2 = QLabel(_('Copyright © 2018 Jens Kieselbach'))
-        textlyt.addWidget(l1)
-        textlyt.addWidget(l2)
-        infolyt.addStretch()
-
-        textedit = QPlainTextEdit(self)
-
-        try:
-            file = open(resources_path.joinpath('LICENSE'), 'r', encoding="utf-8")
-            textedit.insertPlainText(file.read())
-        except Exception as e:
-            textedit.insertPlainText(str(e))
-
-        textedit.moveCursor(QTextCursor.Start)
-        textedit.setTextInteractionFlags(Qt.TextSelectableByKeyboard | Qt.TextSelectableByMouse)
-        textedit.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
-        dlglyt.addWidget(textedit)
-
-        button = QWidget()
-        buttonlyt = QHBoxLayout()
-        button.setLayout(buttonlyt)
-        dlglyt.addWidget(button)
-        ok_button = QPushButton('OK', dialog)
-        # ok_button.setSizePolicy(QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed))
-        buttonlyt.addStretch()
-        buttonlyt.addWidget(ok_button)
-        buttonlyt.addStretch()
-
-        dialog.resize(550, 400)
-        ok_button.setFocus()
-        ok_button.clicked.connect(dialog.accept)
+        dialog = AboutDialog(self)
         dialog.exec_()
 
         #

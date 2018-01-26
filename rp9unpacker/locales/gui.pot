@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2018-01-08 22:10+0100\n"
+"POT-Creation-Date: 2018-01-26 16:44+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,39 +15,30 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: gui.py:23
-msgid "Hello World"
+msgid "rp9UnpAckEr for FS-UAE"
 msgstr ""
 
-#: gui.py:33
-msgid "Open..."
+msgid "Copyright © 2018 Jens Kieselbach"
 msgstr ""
 
-#: gui.py:34
-msgid "Save"
+msgid "Settings"
 msgstr ""
 
-#: gui.py:35
 msgid "Exit"
 msgstr ""
 
-#: gui.py:38
 msgid "File"
 msgstr ""
 
-#: gui.py:44
-msgid "About Hello World"
+msgid "About"
 msgstr ""
 
-#: gui.py:45
 msgid "Help"
 msgstr ""
 
-#: gui.py:49
 msgid "Hello World!"
 msgstr ""
 
-#: gui.py:50
 msgid "Update"
 msgstr ""
 

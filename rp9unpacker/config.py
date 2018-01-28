@@ -17,6 +17,7 @@ class Config:
         self.mainwindow_height = 600
         self.mainwindow_x = 0
         self.mainwindow_y = 0
+        self.current_dir = Path.home()
 
     def load(self):
         configfile = Path.home().joinpath('.rp9unpacker')

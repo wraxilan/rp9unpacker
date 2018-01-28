@@ -4,15 +4,17 @@
 # The gui
 #
 
+import constants as const
+from config import Config
+
 import gettext
 import os
-import constants as const
 
-from config import Config
 from pathlib import Path
-from PyQt5.QtWidgets import QLabel, QPlainTextEdit, QMainWindow, QCheckBox, QDialog, QListWidget, QPushButton, QWidget, QListWidgetItem, QHBoxLayout, QVBoxLayout, QAction, QSizePolicy
 from PyQt5.QtGui import QIcon, QPixmap, QTextCursor
 from PyQt5.QtCore import pyqtSlot, Qt
+from PyQt5.QtWidgets import (QAbstractItemView, QAction, QCheckBox, QDialog, QHBoxLayout, QLabel, QListWidget,
+                             QListWidgetItem, QMainWindow, QPlainTextEdit, QPushButton, QSizePolicy, QVBoxLayout, QWidget)
 
 images_path = Path(__file__).parent.joinpath('images')
 resources_path = Path(__file__).parent.joinpath('resources')
@@ -89,11 +91,11 @@ class MainWindow(QMainWindow):
         appstr = _('rp9UnpAckEr for FS-UAE')
         self.setWindowTitle(appstr + ' ' + const.VERSION)
         self.setWindowIcon(QIcon(str(images_path.joinpath('amigaball.png'))))
-        self.current_dir = Path.home()
 
         # load config
         self.config = Config()
         self.config.load()
+        self.current_dir = self.config.current_dir
 
         self.move(self.config.mainwindow_x, self.config.mainwindow_y)
         self.resize(self.config.mainwindow_witdh, self.config.mainwindow_height)
@@ -114,7 +116,8 @@ class MainWindow(QMainWindow):
 
         # Widgets
         self.file_list = QListWidget()
-        self.dir_button = QPushButton(self)
+        self.file_list.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.dir_button = QPushButton(QIcon.fromTheme('folder-open'), '', self)
         self.show_hidden_check = QCheckBox('Show hidden files', self)
 
         # Connects
@@ -122,6 +125,7 @@ class MainWindow(QMainWindow):
         self.about_action.triggered.connect(self.show_about_dialog)
         self.exit_action.triggered.connect(self.close)
         self.show_hidden_check.stateChanged.connect(self.update_dir)
+        self.file_list.itemDoubleClicked.connect(self.show_file)
 
         # Layout
         main_widget = QWidget()
@@ -132,10 +136,6 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.dir_button)
         main_layout.addWidget(self.file_list)
         main_layout.addWidget(self.show_hidden_check)
-        # main_layout.addWidget(self.edit_text)
-        # main_layout.addWidget(self.update_text_button)
-        # self.file_list.addItem(QListWidgetItem(QIcon.fromTheme('folder'), 'Test 1'))
-        # self.file_list.addItem(QListWidgetItem(QIcon.fromTheme('fs-uae', QIcon.fromTheme('package-x-generic')), 'Test 2'))
         self.update_dir()
 
     @pyqtSlot()
@@ -149,15 +149,19 @@ class MainWindow(QMainWindow):
 
         #
         # result = dialog.exec_()
-        #if result == QDialog.Accepted:
+        # if result == QDialog.Accepted:
         #    eingabe = str(eingabe.text())
         #    print(eingabe)
-        #else:
+        # else:
         #    print("Abgebrochen")
 
     @pyqtSlot()
     def update_dir(self):
-        self.dir_button.setText(str(self.current_dir))
+        self.config.current_dir = self.current_dir
+        if len(self.current_dir.parts) > 1:
+            self.dir_button.setText(self.current_dir.name)
+        else:
+            self.dir_button.setText(self.current_dir.anchor)
         show_hidden = self.show_hidden_check.isChecked()
         self.file_list.clear()
 
@@ -178,7 +182,20 @@ class MainWindow(QMainWindow):
             self.file_list.addItem(QListWidgetItem(QIcon.fromTheme('folder'), fol))
         files.sort(key=str.lower)
         for fil in files:
-            self.file_list.addItem(QListWidgetItem(QIcon.fromTheme('fs-uae', QIcon.fromTheme('package-x-generic')), fil))
+            self.file_list.addItem(
+                QListWidgetItem(QIcon.fromTheme('fs-uae', QIcon.fromTheme('package-x-generic')), fil))
+
+    @pyqtSlot(QListWidgetItem)
+    def show_file(self, item):
+        name = item.text()
+        if name == '..':
+            self.current_dir = self.current_dir.parent
+            self.update_dir()
+        else:
+            file = self.current_dir.joinpath(name)
+            if file.is_dir():
+                self.current_dir = file
+                self.update_dir()
 
     def closeEvent(self, event):
         self.config.mainwindow_witdh = self.width()

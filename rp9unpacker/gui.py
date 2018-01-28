@@ -10,12 +10,12 @@ import constants as const
 
 from config import Config
 from pathlib import Path
-from PyQt5.QtWidgets import QLabel, QPlainTextEdit, QMainWindow, QDialog, QListWidget, QPushButton, QWidget, QListWidgetItem, QHBoxLayout, QVBoxLayout, QAction, QSizePolicy
+from PyQt5.QtWidgets import QLabel, QPlainTextEdit, QMainWindow, QCheckBox, QDialog, QListWidget, QPushButton, QWidget, QListWidgetItem, QHBoxLayout, QVBoxLayout, QAction, QSizePolicy
 from PyQt5.QtGui import QIcon, QPixmap, QTextCursor
 from PyQt5.QtCore import pyqtSlot, Qt
 
-images_path = Path(__file__).parents[0].joinpath('images')
-resources_path = Path(__file__).parents[0].joinpath('resources')
+images_path = Path(__file__).parent.joinpath('images')
+resources_path = Path(__file__).parent.joinpath('resources')
 
 localedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'locales')
 translate = gettext.translation('gui', localedir, fallback=True)
@@ -64,17 +64,14 @@ class AboutDialog(QDialog):
         textedit.setTextInteractionFlags(Qt.TextSelectableByKeyboard | Qt.TextSelectableByMouse)
         textedit.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
         textedit.setStyleSheet('font: 9pt "Monospace"')
-        # nameEdit->setStyleSheet("color: blue;"
-        #                        "background-color: yellow;"
-        #                        "selection-color: yellow;"
-        #                        "selection-background-color: blue;");
         dlglyt.addWidget(textedit)
 
         button = QWidget()
         buttonlyt = QHBoxLayout()
         button.setLayout(buttonlyt)
         dlglyt.addWidget(button)
-        ok_button = QPushButton(QIcon.fromTheme('ok'), 'OK', self)
+        ok_button = QPushButton('OK', self)
+        # ok_button = QPushButton(QIcon.fromTheme('dialog-ok'), 'OK', self)
         # ok_button.setSizePolicy(QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed))
         buttonlyt.addStretch()
         buttonlyt.addWidget(ok_button)
@@ -92,6 +89,7 @@ class MainWindow(QMainWindow):
         appstr = _('rp9UnpAckEr for FS-UAE')
         self.setWindowTitle(appstr + ' ' + const.VERSION)
         self.setWindowIcon(QIcon(str(images_path.joinpath('amigaball.png'))))
+        self.current_dir = Path.home()
 
         # load config
         self.config = Config()
@@ -116,11 +114,14 @@ class MainWindow(QMainWindow):
 
         # Widgets
         self.file_list = QListWidget()
+        self.dir_button = QPushButton(self)
+        self.show_hidden_check = QCheckBox('Show hidden files', self)
 
         # Connects
         # self.update_text_button.clicked.connect(self.update_text)
         self.about_action.triggered.connect(self.show_about_dialog)
         self.exit_action.triggered.connect(self.close)
+        self.show_hidden_check.stateChanged.connect(self.update_dir)
 
         # Layout
         main_widget = QWidget()
@@ -128,13 +129,14 @@ class MainWindow(QMainWindow):
         main_layout = QVBoxLayout()
         main_widget.setLayout(main_layout)
 
+        main_layout.addWidget(self.dir_button)
         main_layout.addWidget(self.file_list)
-        #main_layout.addWidget(self.edit_text)
-        #main_layout.addWidget(self.update_text_button)
-
-        self.file_list.addItem(QListWidgetItem(QIcon.fromTheme('folder'), 'Test 1'))
-        self.file_list.addItem(QListWidgetItem(QIcon.fromTheme('fs-uae', QIcon.fromTheme('package-x-generic')), 'Test 2'))
-
+        main_layout.addWidget(self.show_hidden_check)
+        # main_layout.addWidget(self.edit_text)
+        # main_layout.addWidget(self.update_text_button)
+        # self.file_list.addItem(QListWidgetItem(QIcon.fromTheme('folder'), 'Test 1'))
+        # self.file_list.addItem(QListWidgetItem(QIcon.fromTheme('fs-uae', QIcon.fromTheme('package-x-generic')), 'Test 2'))
+        self.update_dir()
 
     @pyqtSlot()
     def update_text(self):
@@ -152,6 +154,31 @@ class MainWindow(QMainWindow):
         #    print(eingabe)
         #else:
         #    print("Abgebrochen")
+
+    @pyqtSlot()
+    def update_dir(self):
+        self.dir_button.setText(str(self.current_dir))
+        show_hidden = self.show_hidden_check.isChecked()
+        self.file_list.clear()
+
+        folders = []
+        files = []
+        for path in self.current_dir.iterdir():
+            if not path.name.startswith('.') or show_hidden:
+                if path.is_dir():
+                    folders.append(path.name)
+                elif path.is_file():
+                    files.append(path.name)
+
+        if len(self.current_dir.parts) > 1:
+            self.file_list.addItem(QListWidgetItem(QIcon.fromTheme('folder'), '..'))
+
+        folders.sort(key=str.lower)
+        for fol in folders:
+            self.file_list.addItem(QListWidgetItem(QIcon.fromTheme('folder'), fol))
+        files.sort(key=str.lower)
+        for fil in files:
+            self.file_list.addItem(QListWidgetItem(QIcon.fromTheme('fs-uae', QIcon.fromTheme('package-x-generic')), fil))
 
     def closeEvent(self, event):
         self.config.mainwindow_witdh = self.width()

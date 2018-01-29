@@ -14,7 +14,8 @@ from pathlib import Path
 from PyQt5.QtGui import QIcon, QPixmap, QTextCursor
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QCheckBox, QDialog, QHBoxLayout, QLabel, QListWidget,
-                             QListWidgetItem, QMainWindow, QPlainTextEdit, QPushButton, QSizePolicy, QVBoxLayout, QWidget)
+                             QListWidgetItem, QMainWindow, QPlainTextEdit, QPushButton, QSizePolicy, QVBoxLayout,
+                             QWidget)
 
 images_path = Path(__file__).parent.joinpath('images')
 resources_path = Path(__file__).parent.joinpath('resources')

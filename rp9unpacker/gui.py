@@ -13,9 +13,9 @@ import os
 from pathlib import Path
 from PyQt5.QtGui import QIcon, QPixmap, QTextCursor
 from PyQt5.QtCore import pyqtSlot, Qt
-from PyQt5.QtWidgets import (QAbstractItemView, QAction, QCheckBox, QDialog, QHBoxLayout, QLabel, QListWidget,
-                             QListWidgetItem, QMainWindow, QPlainTextEdit, QPushButton, QSizePolicy, QVBoxLayout,
-                             QWidget)
+from PyQt5.QtWidgets import (QAbstractItemView, QAction, QCheckBox, QDialog, QFileDialog, QHBoxLayout, QLabel,
+                             QListWidget, QListWidgetItem, QMainWindow, QPlainTextEdit, QPushButton, QSizePolicy,
+                             QVBoxLayout, QWidget)
 
 images_path = Path(__file__).parent.joinpath('images')
 resources_path = Path(__file__).parent.joinpath('resources')
@@ -122,7 +122,7 @@ class MainWindow(QMainWindow):
         self.show_hidden_check = QCheckBox('Show hidden files', self)
 
         # Connects
-        # self.update_text_button.clicked.connect(self.update_text)
+        self.dir_button.clicked.connect(self.select_dir)
         self.about_action.triggered.connect(self.show_about_dialog)
         self.exit_action.triggered.connect(self.close)
         self.show_hidden_check.stateChanged.connect(self.update_dir)
@@ -137,6 +137,8 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.dir_button)
         main_layout.addWidget(self.file_list)
         main_layout.addWidget(self.show_hidden_check)
+
+        self.file_list.setFocus()
         self.update_dir()
 
     @pyqtSlot()
@@ -155,6 +157,18 @@ class MainWindow(QMainWindow):
         #    print(eingabe)
         # else:
         #    print("Abgebrochen")
+
+    @pyqtSlot()
+    def select_dir(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.ShowDirsOnly
+        filename, ignore = QFileDialog.getOpenFileName(self, 'Choose directory to show', str(self.current_dir),
+                                                       'All Files (*)', options=options)
+        if filename:
+            file = Path(filename)
+            if file.is_dir():
+                self.current_dir = file
+                self.update_dir()
 
     @pyqtSlot()
     def update_dir(self):

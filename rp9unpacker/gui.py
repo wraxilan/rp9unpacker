@@ -9,8 +9,10 @@ from config import Config
 
 import gettext
 import os
+import traceback
 
 from pathlib import Path
+from zipfile import ZipFile, is_zipfile
 from PyQt5.QtGui import QIcon, QPixmap, QTextCursor
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QCheckBox, QDialog, QFileDialog, QHBoxLayout, QLabel,
@@ -138,6 +140,7 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.file_list)
         main_layout.addWidget(self.show_hidden_check)
 
+        self.show_hidden_check.setChecked(self.config.show_hidden)
         self.file_list.setFocus()
         self.update_dir()
 
@@ -177,17 +180,18 @@ class MainWindow(QMainWindow):
             self.dir_button.setText(self.current_dir.name)
         else:
             self.dir_button.setText(self.current_dir.anchor)
-        show_hidden = self.show_hidden_check.isChecked()
+        self.config.show_hidden = self.show_hidden_check.isChecked()
         self.file_list.clear()
 
         folders = []
         files = []
         for path in self.current_dir.iterdir():
-            if not path.name.startswith('.') or show_hidden:
+            if not path.name.startswith('.') or self.config.show_hidden:
                 if path.is_dir():
                     folders.append(path.name)
                 elif path.is_file():
-                    files.append(path.name)
+                    if path.name.lower().endswith('.rp9') and is_zipfile(str(path)):
+                        files.append(path.name)
 
         if len(self.current_dir.parts) > 1:
             self.file_list.addItem(QListWidgetItem(QIcon.fromTheme('folder'), '..'))
@@ -211,6 +215,12 @@ class MainWindow(QMainWindow):
             if file.is_dir():
                 self.current_dir = file
                 self.update_dir()
+            elif file.is_file():
+                self.open_rp9(file)
+
+    def open_rp9(self, file):
+        zipfile = ZipFile(str(file))
+        print(zipfile.filelist)
 
     def closeEvent(self, event):
         self.config.mainwindow_witdh = self.width()

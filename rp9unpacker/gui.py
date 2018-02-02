@@ -17,7 +17,7 @@ from PyQt5.QtGui import QIcon, QPixmap, QTextCursor
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QCheckBox, QDialog, QFileDialog, QHBoxLayout, QLabel,
                              QListWidget, QListWidgetItem, QMainWindow, QPlainTextEdit, QPushButton, QSizePolicy,
-                             QVBoxLayout, QWidget)
+                             QSplitter, QVBoxLayout, QWidget, QFrame, QDialogButtonBox, QGridLayout, QLineEdit)
 
 images_path = Path(__file__).parent.joinpath('images')
 resources_path = Path(__file__).parent.joinpath('resources')
@@ -29,8 +29,8 @@ _ = translate.gettext
 
 class AboutDialog(QDialog):
 
-    def __init__(self, parent):
-        super().__init__(parent)
+    def __init__(self, *args):
+        QDialog.__init__(self, *args)
 
         dlglyt = QVBoxLayout()
         self.setLayout(dlglyt)
@@ -71,20 +71,47 @@ class AboutDialog(QDialog):
         textedit.setStyleSheet('font: 9pt "Monospace"')
         dlglyt.addWidget(textedit)
 
-        button = QWidget()
-        buttonlyt = QHBoxLayout()
-        button.setLayout(buttonlyt)
-        dlglyt.addWidget(button)
-        ok_button = QPushButton('OK', self)
         # ok_button = QPushButton(QIcon.fromTheme('dialog-ok'), 'OK', self)
         # ok_button.setSizePolicy(QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed))
-        buttonlyt.addStretch()
-        buttonlyt.addWidget(ok_button)
-        buttonlyt.addStretch()
+
+        # button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok)
+        button_box.accepted.connect(self.accept)
+        # button_box.rejected.connect(self.reject)
+        dlglyt.addWidget(button_box)
 
         self.resize(600, 400)
-        ok_button.setFocus()
-        ok_button.clicked.connect(self.accept)
+
+
+class Rp9Viewer(QFrame):
+
+    def __init__(self, *args):
+        QFrame.__init__(self, *args)
+        self.setFrameShape(QFrame.StyledPanel | QFrame.Raised)
+
+        type_label = QLabel('Type:')
+        type_label.setAlignment(Qt.AlignRight)
+        title_label = QLabel('Title:')
+        title_label.setAlignment(Qt.AlignRight)
+        genre_label = QLabel('Genre:')
+        genre_label.setAlignment(Qt.AlignRight)
+
+        self.type_edit = QLineEdit()
+        self.title_edit = QPlainTextEdit()
+        self.genre_edit = QLineEdit()
+
+        grid = QGridLayout()
+        self.setLayout(grid)
+        grid.setSpacing(10)
+
+        grid.addWidget(type_label, 0, 0)
+        grid.addWidget(self.type_edit, 0, 1)
+        grid.addWidget(title_label, 0, 2)
+        grid.addWidget(self.title_edit, 0, 3, 5, 1)
+
+        grid.addWidget(genre_label, 1, 0)
+        grid.addWidget(self.genre_edit, 1, 1)
+
 
 
 class MainWindow(QMainWindow):
@@ -118,6 +145,8 @@ class MainWindow(QMainWindow):
         help_menu.addAction(self.about_action)
 
         # Widgets
+        self.splitter = QSplitter(Qt.Horizontal)
+        self.rp9_viewer = Rp9Viewer()
         self.file_list = QListWidget()
         self.file_list.setSelectionMode(QAbstractItemView.SingleSelection)
         self.dir_button = QPushButton(QIcon.fromTheme('folder-open'), '', self)
@@ -131,15 +160,25 @@ class MainWindow(QMainWindow):
         self.file_list.itemDoubleClicked.connect(self.show_file)
 
         # Layout
-        main_widget = QWidget()
-        self.setCentralWidget(main_widget)
-        main_layout = QVBoxLayout()
-        main_widget.setLayout(main_layout)
+        self.setCentralWidget(self.splitter)
 
-        main_layout.addWidget(self.dir_button)
-        main_layout.addWidget(self.file_list)
-        main_layout.addWidget(self.show_hidden_check)
+        left_widget = QWidget()
+        self.splitter.addWidget(left_widget)
+        left_layout = QVBoxLayout()
+        left_widget.setLayout(left_layout)
 
+        left_layout.addWidget(self.dir_button)
+        left_layout.addWidget(self.file_list)
+        left_layout.addWidget(self.show_hidden_check)
+
+        right_widget = QWidget()
+        self.splitter.addWidget(right_widget)
+        right_layout = QVBoxLayout()
+        right_widget.setLayout(right_layout)
+
+        right_layout.addWidget(self.rp9_viewer)
+
+        # inital state
         self.show_hidden_check.setChecked(self.config.show_hidden)
         self.file_list.setFocus()
         self.update_dir()
@@ -219,8 +258,8 @@ class MainWindow(QMainWindow):
                 self.open_rp9(file)
 
     def open_rp9(self, file):
-        zipfile = ZipFile(str(file))
-        print(zipfile.filelist)
+        with ZipFile(str(file)) as zipfile:
+            print(zipfile.filelist)
 
     def closeEvent(self, event):
         self.config.mainwindow_witdh = self.width()

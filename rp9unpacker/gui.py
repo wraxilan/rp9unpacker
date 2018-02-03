@@ -9,7 +9,9 @@ from config import Config
 
 import gettext
 import os
+import sys
 import traceback
+import xml.etree.ElementTree as ET
 
 from pathlib import Path
 from zipfile import ZipFile, is_zipfile
@@ -17,7 +19,8 @@ from PyQt5.QtGui import QIcon, QPixmap, QTextCursor
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QCheckBox, QDialog, QFileDialog, QHBoxLayout, QLabel,
                              QListWidget, QListWidgetItem, QMainWindow, QPlainTextEdit, QPushButton, QSizePolicy,
-                             QSplitter, QVBoxLayout, QWidget, QFrame, QDialogButtonBox, QGridLayout, QLineEdit)
+                             QSplitter, QVBoxLayout, QWidget, QFrame, QDialogButtonBox, QGridLayout, QLineEdit,
+                             QErrorMessage, QMessageBox)
 
 images_path = Path(__file__).parent.joinpath('images')
 resources_path = Path(__file__).parent.joinpath('resources')
@@ -89,6 +92,8 @@ class Rp9Viewer(QFrame):
         QFrame.__init__(self, *args)
         self.setFrameShape(QFrame.StyledPanel | QFrame.Raised)
 
+        self.rp9_file = None
+
         type_label = QLabel('Type:')
         type_label.setAlignment(Qt.AlignRight)
         title_label = QLabel('Title:')
@@ -112,6 +117,25 @@ class Rp9Viewer(QFrame):
         grid.addWidget(genre_label, 1, 0)
         grid.addWidget(self.genre_edit, 1, 1)
 
+    def open_rp9(self, file):
+
+        self.rp9_file = file
+        try:
+            with ZipFile(str(file)) as zipfile:
+                with zipfile.open('rp9-manifest.xml') as manifest:
+                    self.show_manifest(ET.parse(manifest).getroot())
+
+        except Exception:
+            sys.stderr.write('Could not rp9 file: \'' + str(file) + '\'\n')
+            traceback.print_exc(file=sys.stderr)
+            QMessageBox.critical(self, 'Open rp9', "This is not a valid rp9 file!", QMessageBox.Ok)
+
+    def show_manifest(self, root):
+        for child in root:
+            print(child.tag)
+        print(root)
+        application = root.find('{http://www.retroplatform.com}application')
+        print(application)
 
 
 class MainWindow(QMainWindow):
@@ -255,11 +279,7 @@ class MainWindow(QMainWindow):
                 self.current_dir = file
                 self.update_dir()
             elif file.is_file():
-                self.open_rp9(file)
-
-    def open_rp9(self, file):
-        with ZipFile(str(file)) as zipfile:
-            print(zipfile.filelist)
+                self.rp9_viewer.open_rp9(file)
 
     def closeEvent(self, event):
         self.config.mainwindow_witdh = self.width()

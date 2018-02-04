@@ -11,8 +11,8 @@ import gettext
 import os
 import sys
 import traceback
-import xml.etree.ElementTree as ET
 
+from xml.etree import ElementTree
 from pathlib import Path
 from zipfile import ZipFile, is_zipfile
 from PyQt5.QtGui import QIcon, QPixmap, QTextCursor
@@ -20,7 +20,7 @@ from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QCheckBox, QDialog, QFileDialog, QHBoxLayout, QLabel,
                              QListWidget, QListWidgetItem, QMainWindow, QPlainTextEdit, QPushButton, QSizePolicy,
                              QSplitter, QVBoxLayout, QWidget, QFrame, QDialogButtonBox, QGridLayout, QLineEdit,
-                             QMessageBox, QTableWidget, QTableWidgetItem, QAbstractItemView)
+                             QMessageBox, QTableWidget, QTableWidgetItem)
 
 images_path = Path(__file__).parent.joinpath('images')
 resources_path = Path(__file__).parent.joinpath('resources')
@@ -179,7 +179,7 @@ class Rp9Viewer(QFrame):
         try:
             with ZipFile(str(file)) as zipfile:
                 with zipfile.open('rp9-manifest.xml') as manifest:
-                    self.__show_manifest(ET.parse(manifest).getroot())
+                    self.__show_manifest(ElementTree.parse(manifest).getroot())
 
         except Exception:
             sys.stderr.write('Could not rp9 file: \'' + str(file) + '\'\n')
@@ -206,6 +206,9 @@ class Rp9Viewer(QFrame):
             media = application.find('{http://www.retroplatform.com}media')
             if media is not None:
                 self.__show_media(media)
+            extras = application.find('{http://www.retroplatform.com}extras')
+            if extras is not None:
+                self.__show_extras(extras)
 
     def __show_configuration(self, configuration):
         system = configuration.find('{http://www.retroplatform.com}system')
@@ -241,6 +244,13 @@ class Rp9Viewer(QFrame):
             self.media_table.setItem(i, 1, QTableWidgetItem(child.attrib.get('priority', '0')))
             self.media_table.setItem(i, 2, QTableWidgetItem(child.text))
         self.media_table.resizeColumnsToContents()
+
+    def __show_extras(self, extras):
+        # {http: // www.retroplatform.com}image
+        # {http: // www.retroplatform.com}document
+        for document in extras.findall('{http://www.retroplatform.com}document'):
+            document.attrib.get('priority', '0')
+            # < document root = "embedded" type = "help" priority = "1" > rp9 - help - en.txt < / document >
 
 
 class MainWindow(QMainWindow):

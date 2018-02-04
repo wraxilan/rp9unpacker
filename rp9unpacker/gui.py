@@ -20,7 +20,7 @@ from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QCheckBox, QDialog, QFileDialog, QHBoxLayout, QLabel,
                              QListWidget, QListWidgetItem, QMainWindow, QPlainTextEdit, QPushButton, QSizePolicy,
                              QSplitter, QVBoxLayout, QWidget, QFrame, QDialogButtonBox, QGridLayout, QLineEdit,
-                             QErrorMessage, QMessageBox)
+                             QMessageBox, QTableWidget, QTableWidgetItem, QAbstractItemView)
 
 images_path = Path(__file__).parent.joinpath('images')
 resources_path = Path(__file__).parent.joinpath('resources')
@@ -93,29 +93,85 @@ class Rp9Viewer(QFrame):
         self.setFrameShape(QFrame.StyledPanel | QFrame.Raised)
 
         self.rp9_file = None
+        self.line_edits = []
 
-        type_label = QLabel('Type:')
-        type_label.setAlignment(Qt.AlignRight)
-        title_label = QLabel('Title:')
-        title_label.setAlignment(Qt.AlignRight)
-        genre_label = QLabel('Genre:')
-        genre_label.setAlignment(Qt.AlignRight)
+        self.title_edit = self.__lineedit()
+        self.system_edit = self.__lineedit()
+        self.publisher_edit = self.__lineedit()
+        self.type_edit = self.__lineedit()
+        self.genre_edit = self.__lineedit()
+        self.year_edit = self.__lineedit()
+        self.language_edit = self.__lineedit()
+        self.rating_edit = self.__lineedit()
+        self.systemrom_edit = self.__lineedit()
 
-        self.type_edit = QLineEdit()
-        self.title_edit = QPlainTextEdit()
-        self.genre_edit = QLineEdit()
+        self.help_edit = self.__textedit()
+        self.help_edit.setMaximumHeight(self.title_edit.sizeHint().height() * 4)
 
+        self.media_table = QTableWidget()
+        self.media_table.setColumnCount(3)
+        self.media_table.setRowCount(0)
+        self.media_table.setHorizontalHeaderLabels([_('Type'), _('Priority'), _('Name')])
+        self.media_table.setMaximumHeight(self.title_edit.sizeHint().height() * 4)
+        self.media_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+
+        vbox = QVBoxLayout()
+        self.setLayout(vbox)
+
+        grid_widget = QWidget()
+        vbox.addWidget(grid_widget)
+        vbox.addStretch()
         grid = QGridLayout()
-        self.setLayout(grid)
+        grid_widget.setLayout(grid)
+
         grid.setSpacing(10)
 
-        grid.addWidget(type_label, 0, 0)
-        grid.addWidget(self.type_edit, 0, 1)
-        grid.addWidget(title_label, 0, 2)
-        grid.addWidget(self.title_edit, 0, 3, 5, 1)
+        grid.addWidget(self.__label(_('Title:')), 0, 0)
+        grid.addWidget(self.title_edit, 0, 1, 1, 3)
 
-        grid.addWidget(genre_label, 1, 0)
-        grid.addWidget(self.genre_edit, 1, 1)
+        grid.addWidget(self.__label(_('System:')), 1, 0)
+        grid.addWidget(self.system_edit, 1, 1)
+        grid.addWidget(self.__label(_('Publisher:')), 1,2)
+        grid.addWidget(self.publisher_edit, 1, 3)
+
+        grid.addWidget(self.__label(_('Type:')), 2, 0)
+        grid.addWidget(self.type_edit, 2, 1)
+        grid.addWidget(self.__label(_('Genre:')), 2, 2)
+        grid.addWidget(self.genre_edit, 2, 3)
+
+        grid.addWidget(self.__label(_('Year:')), 3, 0)
+        grid.addWidget(self.year_edit, 3, 1)
+        grid.addWidget(self.__label(_('Language:')), 3, 2)
+        grid.addWidget(self.language_edit, 3, 3)
+
+        grid.addWidget(self.__label(_('Rating:')), 4, 0)
+        grid.addWidget(self.rating_edit, 4, 1)
+        grid.addWidget(self.__label(_('System-ROM:')), 4, 2)
+        grid.addWidget(self.systemrom_edit, 4, 3)
+
+        grid.addWidget(self.__label(_('Help:')), 5, 0, 1, 1)
+        grid.addWidget(self.help_edit, 5, 1, 4, 3)
+
+        grid.addWidget(self.__label(_('Media:')), 9, 0, 1, 1)
+        grid.addWidget(self.media_table, 9, 1, 4, 3)
+
+    @staticmethod
+    def __label(name):
+        label = QLabel(name)
+        label.setAlignment(Qt.AlignRight)
+        return label
+
+    def __lineedit(self):
+        edit = QLineEdit()
+        edit.setReadOnly(True)
+        self.line_edits.append(edit)
+        return edit
+
+    def __textedit(self):
+        edit = QPlainTextEdit()
+        edit.setReadOnly(True)
+        self.line_edits.append(edit)
+        return edit
 
     def open_rp9(self, file):
 
@@ -123,19 +179,68 @@ class Rp9Viewer(QFrame):
         try:
             with ZipFile(str(file)) as zipfile:
                 with zipfile.open('rp9-manifest.xml') as manifest:
-                    self.show_manifest(ET.parse(manifest).getroot())
+                    self.__show_manifest(ET.parse(manifest).getroot())
 
         except Exception:
             sys.stderr.write('Could not rp9 file: \'' + str(file) + '\'\n')
             traceback.print_exc(file=sys.stderr)
-            QMessageBox.critical(self, 'Open rp9', "This is not a valid rp9 file!", QMessageBox.Ok)
+            QMessageBox.critical(self, _('Open rp9'), _('This is not a valid rp9 file!'), QMessageBox.Ok)
 
-    def show_manifest(self, root):
-        for child in root:
-            print(child.tag)
-        print(root)
+    def __show_manifest(self, root):
+        for edit in self.line_edits:
+            edit.clear()
+        self.media_table.setRowCount(0)
+
         application = root.find('{http://www.retroplatform.com}application')
-        print(application)
+        if application is not None:
+            description = application.find('{http://www.retroplatform.com}description')
+            if description is not None:
+                system = description.find('{http://www.retroplatform.com}system-filename')
+                if system is None or system.text != 'Amiga':
+                    QMessageBox.critical(self, _('Open rp9'), _('This is not a Amiga rp9 file!'), QMessageBox.Ok)
+                    return
+                self.__show_description(description)
+            configuration = application.find('{http://www.retroplatform.com}configuration')
+            if configuration is not None:
+                self.__show_configuration(configuration)
+            media = application.find('{http://www.retroplatform.com}media')
+            if media is not None:
+                self.__show_media(media)
+
+    def __show_configuration(self, configuration):
+        system = configuration.find('{http://www.retroplatform.com}system')
+        if system is not None:
+            self.system_edit.setText(system.text)
+
+    def __show_description(self, description):
+        fields = {
+            '{http://www.retroplatform.com}title': self.title_edit,
+            '{http://www.retroplatform.com}entity': self.publisher_edit,
+            '{http://www.retroplatform.com}type': self.type_edit,
+            '{http://www.retroplatform.com}genre': self.genre_edit,
+            '{http://www.retroplatform.com}year': self.year_edit,
+            '{http://www.retroplatform.com}language': self.language_edit,
+            '{http://www.retroplatform.com}rating': self.rating_edit,
+            '{http://www.retroplatform.com}systemrom': self.systemrom_edit,
+        }
+        for child in description:
+            field = fields.get(child.tag, None)
+            if field is not None:
+                field.setText(child.text)
+
+    def __show_media(self, media):
+        children = media.getchildren()
+        length = len(children)
+        self.media_table.setRowCount(length)
+        for i in range(length):
+            child = children[i]
+            typetxt = str(child.tag)
+            if typetxt.startswith('{http://www.retroplatform.com}'):
+                typetxt = typetxt[len('{http://www.retroplatform.com}'):]
+            self.media_table.setItem(i, 0, QTableWidgetItem(typetxt))
+            self.media_table.setItem(i, 1, QTableWidgetItem(child.attrib.get('priority', '0')))
+            self.media_table.setItem(i, 2, QTableWidgetItem(child.text))
+        self.media_table.resizeColumnsToContents()
 
 
 class MainWindow(QMainWindow):
@@ -230,7 +335,7 @@ class MainWindow(QMainWindow):
         options |= QFileDialog.ShowDirsOnly
         filename, ignore = QFileDialog.getOpenFileName(self, 'Choose directory to show', str(self.current_dir),
                                                        'All Files (*)', options=options)
-        if filename:
+        if filename is not None:
             file = Path(filename)
             if file.is_dir():
                 self.current_dir = file

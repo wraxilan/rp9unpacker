@@ -43,9 +43,9 @@ class Config:
             self.mainwindow_y = mainwin.get('y', self.mainwindow_y)
 
         filemanager = data.get('filemanager', None)
-        if filemanager:
+        if filemanager is not None:
             filename = filemanager.get('current-dir', None)
-            if filename:
+            if filename is not None:
                 curdir = Path(filename)
                 if curdir.is_dir():
                     self.current_dir = curdir

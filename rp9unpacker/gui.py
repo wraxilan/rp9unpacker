@@ -11,6 +11,7 @@ import gettext
 import os
 import sys
 import traceback
+import io
 
 from xml.etree import ElementTree
 from pathlib import Path
@@ -91,9 +92,11 @@ class Rp9Viewer(QFrame):
     def __init__(self, *args):
         QFrame.__init__(self, *args)
         self.setFrameShape(QFrame.StyledPanel | QFrame.Raised)
+        self.line_edits = []
 
         self.rp9_file = None
-        self.line_edits = []
+        self.rp9_documents = []
+        self.rp9_images = []
 
         self.title_edit = self.__lineedit()
         self.system_edit = self.__lineedit()
@@ -180,6 +183,8 @@ class Rp9Viewer(QFrame):
             with ZipFile(str(file)) as zipfile:
                 with zipfile.open('rp9-manifest.xml') as manifest:
                     self.__show_manifest(ElementTree.parse(manifest).getroot())
+                    self.__load_documents(zipfile)
+                    self.__load_images(zipfile)
 
         except Exception:
             sys.stderr.write('Could not rp9 file: \'' + str(file) + '\'\n')
@@ -190,6 +195,8 @@ class Rp9Viewer(QFrame):
         for edit in self.line_edits:
             edit.clear()
         self.media_table.setRowCount(0)
+        self.rp9_documents.clear()
+        self.rp9_images.clear()
 
         application = root.find('{http://www.retroplatform.com}application')
         if application is not None:
@@ -246,12 +253,28 @@ class Rp9Viewer(QFrame):
         self.media_table.resizeColumnsToContents()
 
     def __show_extras(self, extras):
-        # {http: // www.retroplatform.com}image
-        # {http: // www.retroplatform.com}document
         for document in extras.findall('{http://www.retroplatform.com}document'):
-            document.attrib.get('priority', '0')
-            # < document root = "embedded" type = "help" priority = "1" > rp9 - help - en.txt < / document >
+            if document.attrib.get('root', '') == 'embedded' and document.attrib.get('type', '') == 'help':
+                if document.text.lower().endswith('.txt'):
+                    self.rp9_documents.append(document.text)
+        for image in extras.findall('{http://www.retroplatform.com}image'):
+            if image.attrib.get('root', '') == 'embedded':
+                self.rp9_images.append(image.text)
 
+    def __load_documents(self, zipfile):
+        if not self.rp9_documents:
+            self.rp9_documents.append('rp9-help-en.txt')  # look for default help file
+
+        for doc in self.rp9_documents:
+            with zipfile.open(doc) as text:
+                text = io.TextIOWrapper(io.BytesIO(text.read()))
+                self.help_edit.insertPlainText(text.read())
+
+    def __load_images(self, zipfile):
+        if not self.rp9_images:
+            self.rp9_images.append('rp9-preview.png')  # look for default image file
+        for image in self.rp9_images:
+            print(image)
 
 class MainWindow(QMainWindow):
 

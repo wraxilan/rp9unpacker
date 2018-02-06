@@ -16,12 +16,12 @@ import io
 from xml.etree import ElementTree
 from pathlib import Path
 from zipfile import ZipFile, is_zipfile
-from PyQt5.QtGui import QIcon, QPixmap, QTextCursor
-from PyQt5.QtCore import pyqtSlot, Qt
+from PyQt5.QtGui import QIcon, QPixmap, QTextCursor, QImage
+from PyQt5.QtCore import pyqtSlot, Qt, QSize
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QCheckBox, QDialog, QFileDialog, QHBoxLayout, QLabel,
                              QListWidget, QListWidgetItem, QMainWindow, QPlainTextEdit, QPushButton, QSizePolicy,
                              QSplitter, QVBoxLayout, QWidget, QFrame, QDialogButtonBox, QGridLayout, QLineEdit,
-                             QMessageBox, QTableWidget, QTableWidgetItem)
+                             QMessageBox, QTableWidget, QTableWidgetItem, QListView)
 
 images_path = Path(__file__).parent.joinpath('images')
 resources_path = Path(__file__).parent.joinpath('resources')
@@ -109,24 +109,25 @@ class Rp9Viewer(QFrame):
         self.systemrom_edit = self.__lineedit()
 
         self.help_edit = self.__textedit()
-        self.help_edit.setMaximumHeight(self.title_edit.sizeHint().height() * 4)
+        self.help_edit.setStyleSheet('font-family: Monospace;font-style: normal;')
 
         self.media_table = QTableWidget()
         self.media_table.setColumnCount(3)
         self.media_table.setRowCount(0)
         self.media_table.setHorizontalHeaderLabels([_('Type'), _('Priority'), _('Name')])
-        self.media_table.setMaximumHeight(self.title_edit.sizeHint().height() * 4)
         self.media_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+
+        self.image_list = QListWidget()
+        self.image_list.setSelectionMode(QAbstractItemView.NoSelection)
+        self.image_list.setViewMode(QListView.IconMode)
+        self.image_list.setIconSize(QSize(160, 160))
+        self.image_list.setGridSize(QSize(170, 170))
 
         vbox = QVBoxLayout()
         self.setLayout(vbox)
 
-        grid_widget = QWidget()
-        vbox.addWidget(grid_widget)
-        vbox.addStretch()
         grid = QGridLayout()
-        grid_widget.setLayout(grid)
-
+        vbox.addLayout(grid)
         grid.setSpacing(10)
 
         grid.addWidget(self.__label(_('Title:')), 0, 0)
@@ -153,10 +154,13 @@ class Rp9Viewer(QFrame):
         grid.addWidget(self.systemrom_edit, 4, 3)
 
         grid.addWidget(self.__label(_('Help:')), 5, 0, 1, 1)
-        grid.addWidget(self.help_edit, 5, 1, 4, 3)
+        grid.addWidget(self.help_edit, 5, 1, 1, 3)
 
-        grid.addWidget(self.__label(_('Media:')), 9, 0, 1, 1)
-        grid.addWidget(self.media_table, 9, 1, 4, 3)
+        grid.addWidget(self.__label(_('Media:')), 6, 0, 1, 1)
+        grid.addWidget(self.media_table, 6, 1, 1, 3)
+
+        grid.addWidget(self.__label(_('Images:')), 7, 0, 1, 1)
+        grid.addWidget(self.image_list, 7, 1, 1, 3)
 
     @staticmethod
     def __label(name):
@@ -197,6 +201,7 @@ class Rp9Viewer(QFrame):
         self.media_table.setRowCount(0)
         self.rp9_documents.clear()
         self.rp9_images.clear()
+        self.image_list.clear()
 
         application = root.find('{http://www.retroplatform.com}application')
         if application is not None:
@@ -265,7 +270,18 @@ class Rp9Viewer(QFrame):
         if not self.rp9_documents:
             self.rp9_documents.append('rp9-help-en.txt')  # look for default help file
 
+        with_title = len(self.rp9_documents) > 1
+        newline = False
         for doc in self.rp9_documents:
+            if with_title:
+                if newline:
+                    self.help_edit.insertPlainText('\n')
+                newline = True
+                self.help_edit.insertPlainText(doc)
+                self.help_edit.insertPlainText('\n')
+                for i in range(len(doc)):
+                    self.help_edit.insertPlainText('=')
+                self.help_edit.insertPlainText('\n')
             with zipfile.open(doc) as text:
                 text = io.TextIOWrapper(io.BytesIO(text.read()))
                 self.help_edit.insertPlainText(text.read())
@@ -274,7 +290,13 @@ class Rp9Viewer(QFrame):
         if not self.rp9_images:
             self.rp9_images.append('rp9-preview.png')  # look for default image file
         for image in self.rp9_images:
-            print(image)
+            with zipfile.open(image) as file:
+                icon = QIcon()
+                img = QImage()
+                img.loadFromData(file.read())
+                icon.addPixmap(QPixmap.fromImage(img), QIcon.Normal, QIcon.Off)
+                self.image_list.addItem(QListWidgetItem(icon, ''))
+
 
 class MainWindow(QMainWindow):
 
@@ -364,11 +386,11 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot()
     def select_dir(self):
-        options = QFileDialog.Options()
-        options |= QFileDialog.ShowDirsOnly
-        filename, ignore = QFileDialog.getOpenFileName(self, 'Choose directory to show', str(self.current_dir),
-                                                       'All Files (*)', options=options)
-        if filename is not None:
+        filename = QFileDialog.getExistingDirectory(self, 'Choose directory to show', str(self.current_dir),
+                                                    QFileDialog.ShowDirsOnly | QFileDialog.DontUseNativeDialog)
+        print(filename)
+
+        if filename:
             file = Path(filename)
             if file.is_dir():
                 self.current_dir = file

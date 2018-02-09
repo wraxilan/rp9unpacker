@@ -81,7 +81,6 @@ class AboutDialog(QDialog):
         # button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         button_box = QDialogButtonBox(QDialogButtonBox.Ok)
         button_box.accepted.connect(self.accept)
-        # button_box.rejected.connect(self.reject)
         dlglyt.addWidget(button_box)
 
         self.resize(600, 400)
@@ -91,7 +90,7 @@ class Rp9Viewer(QFrame):
 
     def __init__(self, *args):
         QFrame.__init__(self, *args)
-        self.setFrameShape(QFrame.StyledPanel | QFrame.Raised)
+        # self.setFrameShape(QFrame.StyledPanel | QFrame.Raised)
         self.line_edits = []
 
         self.rp9_file = None
@@ -122,6 +121,7 @@ class Rp9Viewer(QFrame):
         self.image_list.setViewMode(QListView.IconMode)
         self.image_list.setIconSize(QSize(160, 160))
         self.image_list.setGridSize(QSize(170, 170))
+        self.image_list.setStyleSheet("QListWidget::item {border-top: 4px solid transparent; }")
 
         vbox = QVBoxLayout()
         self.setLayout(vbox)
@@ -135,7 +135,7 @@ class Rp9Viewer(QFrame):
 
         grid.addWidget(self.__label(_('System:')), 1, 0)
         grid.addWidget(self.system_edit, 1, 1)
-        grid.addWidget(self.__label(_('Publisher:')), 1,2)
+        grid.addWidget(self.__label(_('Publisher:')), 1, 2)
         grid.addWidget(self.publisher_edit, 1, 3)
 
         grid.addWidget(self.__label(_('Type:')), 2, 0)
@@ -161,6 +161,33 @@ class Rp9Viewer(QFrame):
 
         grid.addWidget(self.__label(_('Images:')), 7, 0, 1, 1)
         grid.addWidget(self.image_list, 7, 1, 1, 3)
+
+        button_box = QDialogButtonBox()
+        vbox.addWidget(button_box)
+
+        self.run_from_temp_button = button_box.addButton('Run in temporary configuration', QDialogButtonBox.NoRole)
+        self.run_from_config_button = button_box.addButton('Write configuration and run', QDialogButtonBox.NoRole)
+        self.write_config_button = button_box.addButton('Write configuration', QDialogButtonBox.NoRole)
+
+        self.run_from_temp_button.clicked.connect(self.run_from_temp)
+        self.run_from_config_button.clicked.connect(self.run_from_config)
+        self.write_config_button.clicked.connect(self.write_config)
+
+        self.run_from_temp_button.setEnabled(False)
+        self.run_from_config_button.setEnabled(False)
+        self.write_config_button.setEnabled(False)
+
+    @pyqtSlot()
+    def run_from_temp(self):
+        print('run_from_temp')
+
+    @pyqtSlot()
+    def run_from_config(self):
+        print('run_from_config')
+
+    @pyqtSlot()
+    def write_config(self):
+        print('write_config')
 
     @staticmethod
     def __label(name):
@@ -190,6 +217,10 @@ class Rp9Viewer(QFrame):
                     self.__load_documents(zipfile)
                     self.__load_images(zipfile)
 
+                    self.run_from_temp_button.setEnabled(True)
+                    self.run_from_config_button.setEnabled(True)
+                    self.write_config_button.setEnabled(True)
+
         except Exception:
             sys.stderr.write('Could not rp9 file: \'' + str(file) + '\'\n')
             traceback.print_exc(file=sys.stderr)
@@ -202,6 +233,9 @@ class Rp9Viewer(QFrame):
         self.rp9_documents.clear()
         self.rp9_images.clear()
         self.image_list.clear()
+        self.run_from_temp_button.setEnabled(False)
+        self.run_from_config_button.setEnabled(False)
+        self.write_config_button.setEnabled(False)
 
         application = root.find('{http://www.retroplatform.com}application')
         if application is not None:
@@ -355,12 +389,7 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(self.file_list)
         left_layout.addWidget(self.show_hidden_check)
 
-        right_widget = QWidget()
-        self.splitter.addWidget(right_widget)
-        right_layout = QVBoxLayout()
-        right_widget.setLayout(right_layout)
-
-        right_layout.addWidget(self.rp9_viewer)
+        self.splitter.addWidget(self.rp9_viewer)
 
         # inital state
         self.show_hidden_check.setChecked(self.config.show_hidden)

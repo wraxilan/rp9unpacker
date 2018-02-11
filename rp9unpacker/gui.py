@@ -5,6 +5,7 @@
 #
 
 import constants as const
+import rp9util as util
 from config import Config
 
 import gettext
@@ -179,7 +180,16 @@ class Rp9Viewer(QFrame):
 
     @pyqtSlot()
     def run_from_temp(self):
-        print('run_from_temp')
+        try:
+            util.run_from_temp(self.rp9_file, Path('/home/jens/tmp/rp9temp'))
+
+        except util.Rp9UtilException as ex:
+            QMessageBox.critical(self, _('Run rp9'), str(ex), QMessageBox.Ok)
+
+        except Exception:
+            sys.stderr.write('Could not run rp9 file: \'' + str(self.rp9_file) + '\'\n')
+            traceback.print_exc(file=sys.stderr)
+            QMessageBox.critical(self, _('Run rp9'), _('Error while trying to run rp9 file!'), QMessageBox.Ok)
 
     @pyqtSlot()
     def run_from_config(self):

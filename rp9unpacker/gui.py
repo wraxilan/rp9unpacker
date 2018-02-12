@@ -12,12 +12,10 @@ import gettext
 import os
 import sys
 import traceback
-import io
 
-from xml.etree import ElementTree
 from pathlib import Path
-from zipfile import ZipFile, is_zipfile
-from PyQt5.QtGui import QIcon, QPixmap, QTextCursor, QImage
+from zipfile import is_zipfile
+from PyQt5.QtGui import QIcon, QPixmap, QTextCursor
 from PyQt5.QtCore import pyqtSlot, Qt, QSize
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QCheckBox, QDialog, QFileDialog, QHBoxLayout, QLabel,
                              QListWidget, QListWidgetItem, QMainWindow, QPlainTextEdit, QPushButton, QSizePolicy,
@@ -371,8 +369,6 @@ class MainWindow(QMainWindow):
     def select_dir(self):
         filename = QFileDialog.getExistingDirectory(self, 'Choose directory to show', str(self.current_dir),
                                                     QFileDialog.ShowDirsOnly | QFileDialog.DontUseNativeDialog)
-        print(filename)
-
         if filename:
             file = Path(filename)
             if file.is_dir():

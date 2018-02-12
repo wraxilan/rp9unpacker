@@ -153,7 +153,7 @@ def __parse_extras(extras, info):
         if image.attrib.get('root', '') == 'embedded':
             imgdoc = Rp9Image()
             info.embedded_images.append(imgdoc)
-            imgdoc.priority = document.attrib.get('priority', '0')
+            imgdoc.priority = image.attrib.get('priority', '0')
             imgdoc.name = image.text
 
 
@@ -214,5 +214,47 @@ def __check_dir(temp_path):
             raise Rp9UtilException(_('The configured temp directory doesn\'t exist!'))
 
 
+def __delete_dir(path):
+    for sub in path.iterdir():
+        if sub.is_dir():
+            __delete_dir(sub)
+        else:
+            sub.unlink()
+    path.rmdir()
+
+
 def run_from_temp(rp9_file, temp_dir):
+    info = get_info(rp9_file)
     __check_dir(temp_dir)
+    __extract_files(rp9_file, info, temp_dir, override=True)
+
+
+def __extract_files(rp9_file, info, dir, override=False):
+    if info.media is None or len(info.media) == 0:
+        raise Rp9UtilException(_('The rp9 file as no media files!'))
+
+    media_dir = None
+    if info.description_title is None or len(info.description_title) == 0:
+        name = rp9_file.name
+        if name.lower().endswith('.rp9') and len(name) > 4:
+            name = name[:-4]
+            media_dir = dir.joinpath(name)
+    else:
+        media_dir = dir.joinpath(info.description_title)
+
+    if media_dir.is_file():
+        raise Rp9UtilException(_('Couldn\'t extract files! Directory already exists as file.'))
+
+    if media_dir.is_dir() and override:
+        __delete_dir(media_dir)
+        media_dir.mkdir()
+    else:
+        media_dir.mkdir()
+
+    with ZipFile(str(rp9_file)) as zipfile:
+        for media in info.media:
+            media_file = media_dir.joinpath(media.name)
+            if not media_file.is_file() and not media_file.is_dir() and not media_file.is_symlink():
+                zipfile.extract(media.name, media_dir)
+
+    # write config

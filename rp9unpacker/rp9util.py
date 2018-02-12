@@ -12,7 +12,8 @@ import io
 
 from xml.etree import ElementTree
 from pathlib import Path
-from zipfile import ZipFile, is_zipfile
+from zipfile import ZipFile
+from PyQt5.QtGui import QImage
 
 localedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'locales')
 translate = gettext.translation('rp9util', localedir, fallback=True)
@@ -61,26 +62,16 @@ class Rp9Info:
         self.embedded_images = []
 
 
-def __check_dir(temp_path):
-    if temp_path.is_file():
-        raise Rp9UtilException(_('The configured temp directory is an existing file!'))
-
-    if not temp_path.is_dir():
-        parent = temp_path.parent
-        if parent.is_dir():
-            temp_path.mkdir()
-        else:
-            raise Rp9UtilException(_('The configured temp directory doesn\'t exist!'))
-
-
-def get_info(file):
+def get_info(file, load_extras=False):
     try:
         with ZipFile(str(file)) as zipfile:
             with zipfile.open('rp9-manifest.xml') as manifest:
                 info = Rp9Info()
                 __parse_manifest(ElementTree.parse(manifest).getroot(), info)
-                __load_documents(zipfile, info)
-                __load_images(zipfile, info)
+                __look_for_default_extras(zipfile, info)
+                if load_extras:
+                    __load_help(zipfile, info)
+                    __load_images(zipfile, info)
                 return info
 
     except Exception:
@@ -96,7 +87,7 @@ def __parse_manifest(root, info):
         if description is not None:
             system = description.find('{http://www.retroplatform.com}system-filename')
             if system is None or system.text != 'Amiga':
-                raise Rp9UtilException( _('This is not a Amiga rp9 file!'))
+                raise Rp9UtilException(_('This is not a Amiga rp9 file!'))
             __parse_description(description, info)
         configuration = application.find('{http://www.retroplatform.com}configuration')
         if configuration is not None:
@@ -153,43 +144,74 @@ def __parse_extras(extras, info):
     for document in extras.findall('{http://www.retroplatform.com}document'):
         if document.attrib.get('root', '') == 'embedded' and document.attrib.get('type', '') == 'help':
             if document.text.lower().endswith('.txt'):
-                self.rp9_documents.append(document.text)
+                helpdoc = Rp9Help()
+                info.embedded_help.append(helpdoc)
+                helpdoc.priority = document.attrib.get('priority', '0')
+                helpdoc.name = document.text
+
     for image in extras.findall('{http://www.retroplatform.com}image'):
         if image.attrib.get('root', '') == 'embedded':
-            self.rp9_images.append(image.text)
+            imgdoc = Rp9Image()
+            info.embedded_images.append(imgdoc)
+            imgdoc.priority = document.attrib.get('priority', '0')
+            imgdoc.name = image.text
 
 
-def __load_documents(self, zipfile):
-    if not self.rp9_documents:
-        self.rp9_documents.append('rp9-help-en.txt')  # look for default help file
+def __look_for_default_extras(zipfile, info):
+    if not info.embedded_help:
+        try:
+            zipinfo = zipfile.getinfo('rp9-help-en.txt')
+            if zipinfo is not None:
+                helpdoc = Rp9Help()
+                info.embedded_help.append(helpdoc)
+                helpdoc.priority = '1'
+                helpdoc.name = 'rp9-help-en.txt'
+        except KeyError:
+            pass
 
-    with_title = len(self.rp9_documents) > 1
-    newline = False
-    for doc in self.rp9_documents:
-        if with_title:
-            if newline:
-                self.help_edit.insertPlainText('\n')
-            newline = True
-            self.help_edit.insertPlainText(doc)
-            self.help_edit.insertPlainText('\n')
-            for i in range(len(doc)):
-                self.help_edit.insertPlainText('=')
-            self.help_edit.insertPlainText('\n')
-        with zipfile.open(doc) as text:
-            text = io.TextIOWrapper(io.BytesIO(text.read()))
-            self.help_edit.insertPlainText(text.read())
+    if not info.embedded_images:
+        try:
+            zipinfo = zipfile.getinfo('rp9-preview.png')
+            if zipinfo:
+                imgdoc = Rp9Image()
+                info.embedded_images.append(imgdoc)
+                imgdoc.priority = '1'
+                imgdoc.name = 'rp9-preview.png'
+        except KeyError:
+            pass
 
 
-def __load_images(self, zipfile):
-    if not self.rp9_images:
-        self.rp9_images.append('rp9-preview.png')  # look for default image file
-    for image in self.rp9_images:
-        with zipfile.open(image) as file:
-            icon = QIcon()
-            img = QImage()
-            img.loadFromData(file.read())
-            icon.addPixmap(QPixmap.fromImage(img), QIcon.Normal, QIcon.Off)
-            self.image_list.addItem(QListWidgetItem(icon, ''))
+def __load_help(zipfile, info):
+    for doc in info.embedded_help:
+        try:
+            with zipfile.open(doc.name) as text:
+                doc.text = io.TextIOWrapper(io.BytesIO(text.read())).read()
+        except KeyError:
+            sys.stderr.write('Could not find embedded document: \'' + doc.name + '\'\n')
+            traceback.print_exc(file=sys.stderr)
+
+
+def __load_images(zipfile, info):
+    for image in info.embedded_images:
+        try:
+            with zipfile.open(image.name) as file:
+                image.image = QImage()
+                image.image.loadFromData(file.read())
+        except KeyError:
+            sys.stderr.write('Could not find embedded image: \'' + image.name + '\'\n')
+            traceback.print_exc(file=sys.stderr)
+
+
+def __check_dir(temp_path):
+    if temp_path.is_file():
+        raise Rp9UtilException(_('The configured temp directory is an existing file!'))
+
+    if not temp_path.is_dir():
+        parent = temp_path.parent
+        if parent.is_dir():
+            temp_path.mkdir()
+        else:
+            raise Rp9UtilException(_('The configured temp directory doesn\'t exist!'))
 
 
 def run_from_temp(rp9_file, temp_dir):

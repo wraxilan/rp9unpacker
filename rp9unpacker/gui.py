@@ -220,23 +220,6 @@ class Rp9Viewer(QFrame):
     def open_rp9(self, file):
 
         self.rp9_file = file
-        try:
-            with ZipFile(str(file)) as zipfile:
-                with zipfile.open('rp9-manifest.xml') as manifest:
-                    self.__show_manifest(ElementTree.parse(manifest).getroot())
-                    self.__load_documents(zipfile)
-                    self.__load_images(zipfile)
-
-                    self.run_from_temp_button.setEnabled(True)
-                    self.run_from_config_button.setEnabled(True)
-                    self.write_config_button.setEnabled(True)
-
-        except Exception:
-            sys.stderr.write('Could not rp9 file: \'' + str(file) + '\'\n')
-            traceback.print_exc(file=sys.stderr)
-            QMessageBox.critical(self, _('Open rp9'), _('This is not a valid rp9 file!'), QMessageBox.Ok)
-
-    def __show_manifest(self, root):
         for edit in self.line_edits:
             edit.clear()
         self.media_table.setRowCount(0)
@@ -247,99 +230,60 @@ class Rp9Viewer(QFrame):
         self.run_from_config_button.setEnabled(False)
         self.write_config_button.setEnabled(False)
 
-        application = root.find('{http://www.retroplatform.com}application')
-        if application is not None:
-            description = application.find('{http://www.retroplatform.com}description')
-            if description is not None:
-                system = description.find('{http://www.retroplatform.com}system-filename')
-                if system is None or system.text != 'Amiga':
-                    QMessageBox.critical(self, _('Open rp9'), _('This is not a Amiga rp9 file!'), QMessageBox.Ok)
-                    return
-                self.__show_description(description)
-            configuration = application.find('{http://www.retroplatform.com}configuration')
-            if configuration is not None:
-                self.__show_configuration(configuration)
-            media = application.find('{http://www.retroplatform.com}media')
-            if media is not None:
-                self.__show_media(media)
-            extras = application.find('{http://www.retroplatform.com}extras')
-            if extras is not None:
-                self.__show_extras(extras)
+        try:
+            info = util.get_info(self.rp9_file, load_extras=True)
 
-    def __show_configuration(self, configuration):
-        system = configuration.find('{http://www.retroplatform.com}system')
-        if system is not None:
-            self.system_edit.setText(system.text)
+            self.title_edit.setText(info.description_title)
+            self.publisher_edit.setText(info.description_publisher)
+            self.type_edit.setText(info.description_type)
+            self.genre_edit.setText(info.description_genre)
+            self.year_edit.setText(info.description_year)
+            self.language_edit.setText(info.description_language)
+            self.rating_edit.setText(info.description_rating)
+            self.systemrom_edit.setText(info.description_systemrom)
+            self.system_edit.setText(info.configuration_system)
 
-    def __show_description(self, description):
-        fields = {
-            '{http://www.retroplatform.com}title': self.title_edit,
-            '{http://www.retroplatform.com}entity': self.publisher_edit,
-            '{http://www.retroplatform.com}type': self.type_edit,
-            '{http://www.retroplatform.com}genre': self.genre_edit,
-            '{http://www.retroplatform.com}year': self.year_edit,
-            '{http://www.retroplatform.com}language': self.language_edit,
-            '{http://www.retroplatform.com}rating': self.rating_edit,
-            '{http://www.retroplatform.com}systemrom': self.systemrom_edit,
-        }
-        for child in description:
-            field = fields.get(child.tag, None)
-            if field is not None:
-                field.setText(child.text)
+            length = len(info.media)
+            self.media_table.setRowCount(length)
+            for i in range(length):
+                media = info.media[i]
+                self.media_table.setItem(i, 0, QTableWidgetItem(media.type))
+                self.media_table.setItem(i, 1, QTableWidgetItem(media.priority))
+                self.media_table.setItem(i, 2, QTableWidgetItem(media.name))
+            self.media_table.resizeColumnsToContents()
 
-    def __show_media(self, media):
-        children = media.getchildren()
-        length = len(children)
-        self.media_table.setRowCount(length)
-        for i in range(length):
-            child = children[i]
-            typetxt = str(child.tag)
-            if typetxt.startswith('{http://www.retroplatform.com}'):
-                typetxt = typetxt[len('{http://www.retroplatform.com}'):]
-            self.media_table.setItem(i, 0, QTableWidgetItem(typetxt))
-            self.media_table.setItem(i, 1, QTableWidgetItem(child.attrib.get('priority', '0')))
-            self.media_table.setItem(i, 2, QTableWidgetItem(child.text))
-        self.media_table.resizeColumnsToContents()
+            with_title = len(info.embedded_help) > 1
+            newline = False
+            for helpdoc in info.embedded_help:
+                if helpdoc.text is not None:
+                    if with_title:
+                        if newline:
+                            self.help_edit.insertPlainText('\n')
+                        newline = True
+                        self.help_edit.insertPlainText(helpdoc.name)
+                        self.help_edit.insertPlainText('\n')
+                        for i in range(len(helpdoc.name)):
+                            self.help_edit.insertPlainText('=')
+                        self.help_edit.insertPlainText('\n')
+                    self.help_edit.insertPlainText(helpdoc.text)
 
-    def __show_extras(self, extras):
-        for document in extras.findall('{http://www.retroplatform.com}document'):
-            if document.attrib.get('root', '') == 'embedded' and document.attrib.get('type', '') == 'help':
-                if document.text.lower().endswith('.txt'):
-                    self.rp9_documents.append(document.text)
-        for image in extras.findall('{http://www.retroplatform.com}image'):
-            if image.attrib.get('root', '') == 'embedded':
-                self.rp9_images.append(image.text)
+            for image in info.embedded_images:
+                if image.image is not None:
+                    icon = QIcon()
+                    icon.addPixmap(QPixmap.fromImage(image.image), QIcon.Normal, QIcon.Off)
+                    self.image_list.addItem(QListWidgetItem(icon, ''))
 
-    def __load_documents(self, zipfile):
-        if not self.rp9_documents:
-            self.rp9_documents.append('rp9-help-en.txt')  # look for default help file
+            self.run_from_temp_button.setEnabled(True)
+            self.run_from_config_button.setEnabled(True)
+            self.write_config_button.setEnabled(True)
 
-        with_title = len(self.rp9_documents) > 1
-        newline = False
-        for doc in self.rp9_documents:
-            if with_title:
-                if newline:
-                    self.help_edit.insertPlainText('\n')
-                newline = True
-                self.help_edit.insertPlainText(doc)
-                self.help_edit.insertPlainText('\n')
-                for i in range(len(doc)):
-                    self.help_edit.insertPlainText('=')
-                self.help_edit.insertPlainText('\n')
-            with zipfile.open(doc) as text:
-                text = io.TextIOWrapper(io.BytesIO(text.read()))
-                self.help_edit.insertPlainText(text.read())
+        except util.Rp9UtilException as ex:
+            QMessageBox.critical(self, _('Run rp9'), str(ex), QMessageBox.Ok)
 
-    def __load_images(self, zipfile):
-        if not self.rp9_images:
-            self.rp9_images.append('rp9-preview.png')  # look for default image file
-        for image in self.rp9_images:
-            with zipfile.open(image) as file:
-                icon = QIcon()
-                img = QImage()
-                img.loadFromData(file.read())
-                icon.addPixmap(QPixmap.fromImage(img), QIcon.Normal, QIcon.Off)
-                self.image_list.addItem(QListWidgetItem(icon, ''))
+        except Exception:
+            sys.stderr.write('Could not rp9 file: \'' + str(file) + '\'\n')
+            traceback.print_exc(file=sys.stderr)
+            QMessageBox.critical(self, _('Open rp9'), _('This is not a valid rp9 file!'), QMessageBox.Ok)
 
 
 class MainWindow(QMainWindow):

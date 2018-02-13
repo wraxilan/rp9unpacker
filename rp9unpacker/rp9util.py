@@ -9,6 +9,7 @@ import os
 import sys
 import traceback
 import io
+import subprocess
 
 from xml.etree import ElementTree
 from pathlib import Path
@@ -226,21 +227,37 @@ def __delete_dir(path):
 def run_from_temp(rp9_file, temp_dir):
     info = get_info(rp9_file)
     __check_dir(temp_dir)
-    __extract_files(rp9_file, info, temp_dir, override=True)
+    config_file = __extract_files(rp9_file, info, temp_dir, override=True)
+
+    subprocess.run(['fs-uae', str(config_file)])
 
 
-def __extract_files(rp9_file, info, dir, override=False):
+def __extract_files(rp9_file, info, media_base_dir, override=False):
     if info.media is None or len(info.media) == 0:
         raise Rp9UtilException(_('The rp9 file as no media files!'))
 
-    media_dir = None
+    sorted_media = sorted(info.media, key=lambda m: m.priority)
+    floppy_list = []
+    hd_list = []
+    for media in sorted_media:
+        if media.type == 'floppy':
+            floppy_list.append(media)
+        elif media.type == 'harddrive':
+            hd_list.append(media)
+        else:
+            raise Rp9UtilException(_('The rp9 file contains an unsupported media type!'))
+
+    # ----------------------------------------------------------------------
+
+    media_name = None
     if info.description_title is None or len(info.description_title) == 0:
         name = rp9_file.name
         if name.lower().endswith('.rp9') and len(name) > 4:
-            name = name[:-4]
-            media_dir = dir.joinpath(name)
+            media_name = name[:-4]
     else:
-        media_dir = dir.joinpath(info.description_title)
+        media_name = info.description_title
+
+    media_dir = media_base_dir.joinpath(media_name)
 
     if media_dir.is_file():
         raise Rp9UtilException(_('Couldn\'t extract files! Directory already exists as file.'))
@@ -258,3 +275,30 @@ def __extract_files(rp9_file, info, dir, override=False):
                 zipfile.extract(media.name, media_dir)
 
     # write config
+    config_file = media_dir.joinpath(media_name + '.fs-uae')
+    with open(str(config_file), 'w', encoding='utf-8') as config:
+        config.write('# FS-UAE configuration saved by rp9UnpAckEr\n\n')
+        config.write('[fs-uae]\n')
+
+        config.write('amiga_model = A500 +\n')
+
+        length = len(floppy_list)
+        if length > 2:
+            length = 2
+        for i in range(length):
+            config.write('floppy_drive_' + str(i))
+            config.write(' = ')
+            config.write(str(media_dir.joinpath(floppy_list[i].name)))
+            config.write('\n')
+        if length == 2:
+            config.write('floppy_drive_count = 2')
+        config.write('floppy_drive_speed = 800\n')
+
+        length = len(hd_list)
+        for i in range(length):
+            config.write('hard_drive_' + str(i))
+            config.write(' = ')
+            config.write(str(media_dir.joinpath(hd_list[i].name)))
+            config.write('\n')
+
+    return config_file

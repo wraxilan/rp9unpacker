@@ -12,7 +12,6 @@ import io
 import subprocess
 
 from xml.etree import ElementTree
-from pathlib import Path
 from zipfile import ZipFile
 from PyQt5.QtGui import QImage
 
@@ -58,6 +57,8 @@ class Rp9Info:
         self.description_rating = None
         self.description_systemrom = None
         self.configuration_system = None
+        self.configuration_floppy_count = 0
+        self.configuration_hdf_boot = None
         self.media = []
         self.embedded_help = []
         self.embedded_images = []
@@ -105,6 +106,17 @@ def __parse_configuration(configuration, info):
     system = configuration.find('{http://www.retroplatform.com}system')
     if system is not None:
         info.configuration_system = system.text
+
+    info.configuration_floppy_count = 0
+    peripherals = configuration.findall('{http://www.retroplatform.com}peripheral')
+    for peripheral in peripherals:
+        if peripheral.attrib.get('type', '') == 'dd' and peripheral.text == 'floppy':
+            info.configuration_floppy_count = info.configuration_floppy_count + 1
+
+    boot = configuration.find('{http://www.retroplatform.com}boot')
+    if boot is not None:
+        if boot.attrib.get('type', '') == 'hdf':
+            info.configuration_hdf_boot = boot.text
 
 
 def __parse_description(description, info):
@@ -227,12 +239,14 @@ def __delete_dir(path):
 def run_from_temp(rp9_file, temp_dir):
     info = get_info(rp9_file)
     __check_dir(temp_dir)
-    config_file = __extract_files(rp9_file, info, temp_dir, override=True)
+    config_file = __extract_and_write_config(rp9_file, info, temp_dir, override=True)
 
     subprocess.run(['fs-uae', str(config_file)])
 
 
-def __extract_files(rp9_file, info, media_base_dir, override=False):
+def __extract_and_write_config(rp9_file, info, media_base_dir, override=False):
+
+    # pre check
     if info.media is None or len(info.media) == 0:
         raise Rp9UtilException(_('The rp9 file as no media files!'))
 
@@ -247,8 +261,17 @@ def __extract_files(rp9_file, info, media_base_dir, override=False):
         else:
             raise Rp9UtilException(_('The rp9 file contains an unsupported media type!'))
 
-    # ----------------------------------------------------------------------
+    boot_hdfs = {
+        '135': '/home/jens/Dokumente/FS-UAE/Hard Drives/workbench-135_org.hdf',
+        '211': '/home/jens/Dokumente/FS-UAE/Hard Drives/workbench-211_org.hdf',
+        '311': '/home/jens/Dokumente/FS-UAE/Hard Drives/workbench-311_org.hdf'
+    }
 
+    if info.configuration_hdf_boot is not None and len(info.configuration_hdf_boot) > 0 and \
+            info.configuration_hdf_boot not in boot_hdfs:
+        raise Rp9UtilException(_('The rp9 file contains an unsupported boot harddisk!'))
+
+    # extract media
     media_name = None
     if info.description_title is None or len(info.description_title) == 0:
         name = rp9_file.name
@@ -280,25 +303,68 @@ def __extract_files(rp9_file, info, media_base_dir, override=False):
         config.write('# FS-UAE configuration saved by rp9UnpAckEr\n\n')
         config.write('[fs-uae]\n')
 
-        config.write('amiga_model = A500 +\n')
+        # write mode
+        models = {
+            'a-500': 'A500',
+            'a-500plus': 'A500+',
+            'a-600': 'A600',
+            'a-1000': 'A1000',
+            'a-1200': 'A1200',
+            'a-2000': 'A500',
+            'a-3000': 'A3000',
+            'a-4000': 'A4000/040'
+        }
+
+        if info.configuration_system not in models:
+            print('Unknown amiga system: ' + info.configuration_system + ' Using default.')
+
+        config.write('amiga_model = ')
+        config.write(models.get(info.configuration_system, 'a-500'))
+        config.write('\n')
+
+        # write harddisks
+        offset = 0
+        if info.configuration_hdf_boot is not None and len(info.configuration_hdf_boot) > 0:
+            config.write('hard_drive_0 = ')
+            config.write(boot_hdfs.get(info.configuration_hdf_boot))
+            config.write('\n')
+            offset = 1
+
+        length = len(hd_list)
+        for i in range(length):
+            config.write('hard_drive_' + str(i + offset))
+            config.write(' = ')
+            config.write(str(media_dir.joinpath(hd_list[i].name)))
+            config.write('\n')
+
+        # write floppies
+        floppy_count = 1
+        if info.configuration_floppy_count > 1:
+            floppy_count = info.configuration_floppy_count
 
         length = len(floppy_list)
-        if length > 2:
-            length = 2
+        if length > floppy_count:
+            length = floppy_count
         for i in range(length):
             config.write('floppy_drive_' + str(i))
             config.write(' = ')
             config.write(str(media_dir.joinpath(floppy_list[i].name)))
             config.write('\n')
-        if length == 2:
-            config.write('floppy_drive_count = 2')
-        config.write('floppy_drive_speed = 800\n')
+            config.write('floppy_drive_' + str(i))
+            config.write('_sounds = off\n')
 
-        length = len(hd_list)
-        for i in range(length):
-            config.write('hard_drive_' + str(i))
-            config.write(' = ')
-            config.write(str(media_dir.joinpath(hd_list[i].name)))
-            config.write('\n')
+        config.write('floppy_drive_count = ')
+        config.write(str(floppy_count))
+        config.write('\n')
+        config.write('floppy_drive_speed = 800\n')
+        config.write('floppy_drive_volume_empty = 0\n')
+
+        length = len(floppy_list)
+        if length > 1:
+            for i in range(length):
+                config.write('floppy_image_' + str(i))
+                config.write(' = ')
+                config.write(str(media_dir.joinpath(floppy_list[i].name)))
+                config.write('\n')
 
     return config_file

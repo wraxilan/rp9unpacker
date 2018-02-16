@@ -13,6 +13,7 @@ import subprocess
 
 from xml.etree import ElementTree
 from zipfile import ZipFile
+from PyQt5.QtCore import QObject, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QImage
 
 localedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'locales')
@@ -62,6 +63,21 @@ class Rp9Info:
         self.media = []
         self.embedded_help = []
         self.embedded_images = []
+
+
+class Rp9ProcessWorker(QObject):
+    exitSignal = pyqtSignal()
+
+    def __init__(self, cfile, remdir):
+        super().__init__()
+
+        self.config_file = cfile
+        self.dir_to_remove = remdir
+
+    @pyqtSlot()
+    def execute(self):
+        subprocess.run(['fs-uae', str(self.config_file)])
+        self.exitSignal.emit()
 
 
 def get_info(file, load_extras=False):
@@ -240,8 +256,7 @@ def run_from_temp(rp9_file, temp_dir):
     info = get_info(rp9_file)
     __check_dir(temp_dir)
     config_file = __extract_and_write_config(rp9_file, info, temp_dir, override=True)
-
-    subprocess.run(['fs-uae', str(config_file)])
+    return Rp9ProcessWorker(config_file, None)
 
 
 def __extract_and_write_config(rp9_file, info, media_base_dir, override=False):

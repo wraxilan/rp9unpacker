@@ -16,7 +16,7 @@ import traceback
 from pathlib import Path
 from zipfile import is_zipfile
 from PyQt5.QtGui import QIcon, QPixmap, QTextCursor
-from PyQt5.QtCore import pyqtSlot, Qt, QSize
+from PyQt5.QtCore import pyqtSlot, Qt, QSize, QThread
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QCheckBox, QDialog, QFileDialog, QHBoxLayout, QLabel,
                              QListWidget, QListWidgetItem, QMainWindow, QPlainTextEdit, QPushButton, QSizePolicy,
                              QSplitter, QVBoxLayout, QWidget, QFrame, QDialogButtonBox, QGridLayout, QLineEdit,
@@ -89,13 +89,14 @@ class Rp9Viewer(QFrame):
 
     def __init__(self, *args):
         QFrame.__init__(self, *args)
-        # self.setFrameShape(QFrame.StyledPanel | QFrame.Raised)
-        self.line_edits = []
 
+        self.worker = None
+        self.thread = None
         self.rp9_file = None
         self.rp9_documents = []
         self.rp9_images = []
 
+        self.line_edits = []
         self.title_edit = self.__lineedit()
         self.system_edit = self.__lineedit()
         self.publisher_edit = self.__lineedit()
@@ -177,9 +178,24 @@ class Rp9Viewer(QFrame):
         self.write_config_button.setEnabled(False)
 
     @pyqtSlot()
+    def exit_thread(self):
+        if self.thread is not None and self.thread.isRunning():
+            self.thread.exit()
+
+    @pyqtSlot()
     def run_from_temp(self):
         try:
-            util.run_from_temp(self.rp9_file, Path('/home/jens/tmp/rp9temp'))
+            if self.thread is not None and self.thread.isRunning():
+                QMessageBox.warning(self, _('Run rp9'), _('The previous fs-uae process is still running.'),
+                                    QMessageBox.Ok)
+                return
+
+            self.worker = util.run_from_temp(self.rp9_file, Path('/home/jens/tmp/rp9temp'))
+            self.thread = QThread()
+            self.thread.started.connect(self.worker.execute)
+            self.worker.moveToThread(self.thread)
+            self.worker.exitSignal.connect(self.exit_thread)
+            self.thread.start()
 
         except util.Rp9UtilException as ex:
             QMessageBox.critical(self, _('Run rp9'), str(ex), QMessageBox.Ok)

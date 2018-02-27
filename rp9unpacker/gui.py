@@ -20,7 +20,7 @@ from PyQt5.QtCore import pyqtSlot, Qt, QSize, QThread
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QCheckBox, QDialog, QFileDialog, QHBoxLayout, QLabel,
                              QListWidget, QListWidgetItem, QMainWindow, QPlainTextEdit, QPushButton, QSizePolicy,
                              QSplitter, QVBoxLayout, QWidget, QFrame, QDialogButtonBox, QGridLayout, QLineEdit,
-                             QMessageBox, QTableWidget, QTableWidgetItem, QListView)
+                             QMessageBox, QTableWidget, QTableWidgetItem, QListView, QLayout)
 
 images_path = Path(__file__).parent.joinpath('images')
 resources_path = Path(__file__).parent.joinpath('resources')
@@ -34,6 +34,7 @@ class AboutDialog(QDialog):
 
     def __init__(self, *args):
         QDialog.__init__(self, *args)
+        self.setWindowTitle(_('About rp9UnpAckEr for FS-UAE'))
 
         dlglyt = QVBoxLayout()
         self.setLayout(dlglyt)
@@ -83,6 +84,103 @@ class AboutDialog(QDialog):
         dlglyt.addWidget(button_box)
 
         self.resize(600, 400)
+
+
+class DirectoryFieldButton(QPushButton):
+
+    def __init__(self, icon, parent, ledit, dirsonly):
+        QPushButton.__init__(self, icon, '', parent)
+        self.line_edit = ledit
+        self.directories_only = dirsonly
+        self.clicked.connect(self.select_dir)
+
+    @pyqtSlot()
+    def select_dir(self):
+
+        if self.directories_only:
+            filename = QFileDialog.getExistingDirectory(self, 'Choose directory', self.line_edit.text(),
+                                                        QFileDialog.ShowDirsOnly | QFileDialog.DontUseNativeDialog)
+        else:
+            filename, _ = QFileDialog.getOpenFileName(self, 'Choose file', self.line_edit.text(),
+                                                      options=QFileDialog.DontUseNativeDialog)
+        if filename:
+            file = Path(filename)
+            if self.directories_only:
+                if file.is_dir():
+                    self.line_edit.setText(filename)
+                    self.line_edit.setFocus()
+            else:
+                if file.is_file():
+                    self.line_edit.setText(filename)
+                    self.line_edit.setFocus()
+
+
+class SettingsDialog(QDialog):
+
+    def __init__(self, *args):
+        QDialog.__init__(self, *args)
+        self.setWindowTitle(_('Settings'))
+
+        self.fsuae_command_edit = self.__lineedit()
+        self.fsuae_documents_dir_edit = self.__lineedit()
+        self.temp_dir_edit = self.__lineedit()
+        self.workbench_135_hd_edit = self.__lineedit()
+        self.workbench_211_hd_edit = self.__lineedit()
+        self.workbench_311_hd_edit = self.__lineedit()
+
+        dlglyt = QVBoxLayout()
+        dlglyt.setSizeConstraint(QLayout.SetFixedSize)
+        self.setLayout(dlglyt)
+
+        grid = QGridLayout()
+        dlglyt.addLayout(grid)
+        grid.setSpacing(10)
+
+        grid.addWidget(self.__label(_('FS-UAE command:')), 0, 0)
+        grid.addWidget(self.fsuae_command_edit, 0, 1)
+        grid.addWidget(self.__dirbutton(self.fsuae_command_edit, False), 0, 2)
+
+        grid.addWidget(self.__label(_('FS-UAE document directory:')), 1, 0)
+        grid.addWidget(self.fsuae_documents_dir_edit, 1, 1)
+        grid.addWidget(self.__dirbutton(self.fsuae_documents_dir_edit, True), 1, 2)
+
+        grid.addWidget(self.__label(_('Temp directory:')), 2, 0)
+        grid.addWidget(self.temp_dir_edit, 2, 1)
+        grid.addWidget(self.__dirbutton(self.temp_dir_edit, True), 2, 2)
+
+        grid.addWidget(self.__label(_('Workbench-135 harddisk:')), 3, 0)
+        grid.addWidget(self.workbench_135_hd_edit, 3, 1)
+        grid.addWidget(self.__dirbutton(self.workbench_135_hd_edit, False), 3, 2)
+
+        grid.addWidget(self.__label(_('Workbench-211 harddisk:')), 4, 0)
+        grid.addWidget(self.workbench_211_hd_edit, 4, 1)
+        grid.addWidget(self.__dirbutton(self.workbench_211_hd_edit, False), 4, 2)
+
+        grid.addWidget(self.__label(_('Workbench-311 harddisk:')), 5, 0)
+        grid.addWidget(self.workbench_311_hd_edit, 5, 1)
+        grid.addWidget(self.__dirbutton(self.workbench_311_hd_edit, False), 5, 2)
+
+        dlglyt.addSpacing(10)
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+        dlglyt.addWidget(button_box)
+
+    @staticmethod
+    def __label(name):
+        label = QLabel(name)
+        label.setAlignment(Qt.AlignRight)
+        return label
+
+    @staticmethod
+    def __lineedit():
+        edit = QLineEdit()
+        edit.setFixedWidth(400)
+        return edit
+
+    def __dirbutton(self, ledit, dirsonly):
+        button = DirectoryFieldButton(QIcon.fromTheme('folder-open'), self, ledit, dirsonly)
+        return button
 
 
 class Rp9Viewer(QFrame):
@@ -317,12 +415,12 @@ class MainWindow(QMainWindow):
         self.resize(self.config.mainwindow_witdh, self.config.mainwindow_height)
 
         # Menu Bar
-        self.open_file_action = QAction(_('Settings'), self)
+        self.settings_action = QAction(_('Settings'), self)
         self.exit_action = QAction(_('Exit'), self)
         self.exit_action.setMenuRole(QAction.QuitRole)
 
-        file_menu = self.menuBar().addMenu(_('File'))
-        file_menu.addAction(self.open_file_action)
+        file_menu = self.menuBar().addMenu(_('Program'))
+        file_menu.addAction(self.settings_action)
         file_menu.addSeparator()
         file_menu.addAction(self.exit_action)
 
@@ -341,6 +439,7 @@ class MainWindow(QMainWindow):
         # Connects
         self.dir_button.clicked.connect(self.select_dir)
         self.about_action.triggered.connect(self.show_about_dialog)
+        self.settings_action.triggered.connect(self.show_settings_dialog)
         self.exit_action.triggered.connect(self.close)
         self.show_hidden_check.stateChanged.connect(self.update_dir)
         self.file_list.itemDoubleClicked.connect(self.show_file)
@@ -373,13 +472,14 @@ class MainWindow(QMainWindow):
         dialog = AboutDialog(self)
         dialog.exec_()
 
-        #
-        # result = dialog.exec_()
-        # if result == QDialog.Accepted:
-        #    eingabe = str(eingabe.text())
-        #    print(eingabe)
-        # else:
-        #    print("Abgebrochen")
+    @pyqtSlot()
+    def show_settings_dialog(self):
+        dialog = SettingsDialog(self)
+        result = dialog.exec_()
+        if result == QDialog.Accepted:
+            print('OK')
+        else:
+            print('Abgebrochen')
 
     @pyqtSlot()
     def select_dir(self):

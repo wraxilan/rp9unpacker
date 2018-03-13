@@ -277,9 +277,9 @@ def __extract_and_write_config(rp9_file, info, media_base_dir, override=False):
             raise Rp9UtilException(_('The rp9 file contains an unsupported media type!'))
 
     boot_hdfs = {
-        '135': '/home/jens/Dokumente/FS-UAE/Hard Drives/workbench-135_org.hdf',
-        '211': '/home/jens/Dokumente/FS-UAE/Hard Drives/workbench-211_org.hdf',
-        '311': '/home/jens/Dokumente/FS-UAE/Hard Drives/workbench-311_org.hdf'
+        '135': '/home/jens/Dokumente/FS-UAE/Hard Drives/workbench-135.hdf',
+        '211': '/home/jens/Dokumente/FS-UAE/Hard Drives/workbench-211.hdf',
+        '311': '/home/jens/Dokumente/FS-UAE/Hard Drives/workbench-311.hdf'
     }
 
     if info.configuration_hdf_boot is not None and len(info.configuration_hdf_boot) > 0 and \

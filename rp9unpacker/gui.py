@@ -123,6 +123,7 @@ class SettingsDialog(QDialog):
 
         self.fsuae_command_edit = self.__lineedit()
         self.fsuae_documents_dir_edit = self.__lineedit()
+        self.fsuae_rp9_dir_edit = self.__lineedit()
         self.temp_dir_edit = self.__lineedit()
         self.workbench_135_hd_edit = self.__lineedit()
         self.workbench_211_hd_edit = self.__lineedit()
@@ -140,25 +141,29 @@ class SettingsDialog(QDialog):
         grid.addWidget(self.fsuae_command_edit, 0, 1)
         grid.addWidget(self.__dirbutton(self.fsuae_command_edit, False), 0, 2)
 
-        grid.addWidget(self.__label(_('FS-UAE document directory:')), 1, 0)
+        grid.addWidget(self.__label(_('FS-UAE documents directory:')), 1, 0)
         grid.addWidget(self.fsuae_documents_dir_edit, 1, 1)
         grid.addWidget(self.__dirbutton(self.fsuae_documents_dir_edit, True), 1, 2)
 
-        grid.addWidget(self.__label(_('Temp directory:')), 2, 0)
-        grid.addWidget(self.temp_dir_edit, 2, 1)
-        grid.addWidget(self.__dirbutton(self.temp_dir_edit, True), 2, 2)
+        grid.addWidget(self.__label(_('RP9 extraction directory:')), 2, 0)
+        grid.addWidget(self.fsuae_rp9_dir_edit, 2, 1)
+        grid.addWidget(self.__dirbutton(self.fsuae_rp9_dir_edit, True), 2, 2)
 
-        grid.addWidget(self.__label(_('Workbench-135 harddisk:')), 3, 0)
-        grid.addWidget(self.workbench_135_hd_edit, 3, 1)
-        grid.addWidget(self.__dirbutton(self.workbench_135_hd_edit, False), 3, 2)
+        grid.addWidget(self.__label(_('Temp directory:')), 3, 0)
+        grid.addWidget(self.temp_dir_edit, 3, 1)
+        grid.addWidget(self.__dirbutton(self.temp_dir_edit, True), 3, 2)
 
-        grid.addWidget(self.__label(_('Workbench-211 harddisk:')), 4, 0)
-        grid.addWidget(self.workbench_211_hd_edit, 4, 1)
-        grid.addWidget(self.__dirbutton(self.workbench_211_hd_edit, False), 4, 2)
+        grid.addWidget(self.__label(_('Workbench-135 harddisk:')), 4, 0)
+        grid.addWidget(self.workbench_135_hd_edit, 4, 1)
+        grid.addWidget(self.__dirbutton(self.workbench_135_hd_edit, False), 4, 2)
 
-        grid.addWidget(self.__label(_('Workbench-311 harddisk:')), 5, 0)
-        grid.addWidget(self.workbench_311_hd_edit, 5, 1)
-        grid.addWidget(self.__dirbutton(self.workbench_311_hd_edit, False), 5, 2)
+        grid.addWidget(self.__label(_('Workbench-211 harddisk:')), 5, 0)
+        grid.addWidget(self.workbench_211_hd_edit, 5, 1)
+        grid.addWidget(self.__dirbutton(self.workbench_211_hd_edit, False), 5, 2)
+
+        grid.addWidget(self.__label(_('Workbench-311 harddisk:')), 6, 0)
+        grid.addWidget(self.workbench_311_hd_edit, 6, 1)
+        grid.addWidget(self.__dirbutton(self.workbench_311_hd_edit, False), 6, 2)
 
         dlglyt.addSpacing(10)
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -475,11 +480,23 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def show_settings_dialog(self):
         dialog = SettingsDialog(self)
+        dialog.fsuae_command_edit.setText(self.config.fsuae_command)
+        dialog.fsuae_documents_dir_edit.setText(self.config.fsuae_documents_dir)
+        dialog.fsuae_rp9_dir_edit.setText(self.config.fsuae_rp9_dir)
+        dialog.temp_dir_edit.setText(self.config.temp_dir)
+        dialog.workbench_135_hd_edit.setText(self.config.workbench_135_hd)
+        dialog.workbench_211_hd_edit.setText(self.config.workbench_211_hd)
+        dialog.workbench_311_hd_edit.setText(self.config.workbench_311_hd)
+
         result = dialog.exec_()
         if result == QDialog.Accepted:
-            print('OK')
-        else:
-            print('Abgebrochen')
+            self.config.fsuae_command = dialog.fsuae_command_edit.text()
+            self.config.fsuae_documents_dir = dialog.fsuae_documents_dir_edit.text()
+            self.config.fsuae_rp9_dir = dialog.fsuae_rp9_dir_edit.text()
+            self.config.temp_dir = dialog.temp_dir_edit.text()
+            self.config.workbench_135_hd = dialog.workbench_135_hd_edit.text()
+            self.config.workbench_211_hd = dialog.workbench_211_hd_edit.text()
+            self.config.workbench_311_hd = dialog.workbench_311_hd_edit.text()
 
     @pyqtSlot()
     def select_dir(self):

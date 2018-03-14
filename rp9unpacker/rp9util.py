@@ -11,6 +11,7 @@ import traceback
 import io
 import subprocess
 
+from pathlib import Path
 from xml.etree import ElementTree
 from zipfile import ZipFile
 from PyQt5.QtCore import QObject, pyqtSlot, pyqtSignal
@@ -68,16 +69,32 @@ class Rp9Info:
 class Rp9ProcessWorker(QObject):
     exitSignal = pyqtSignal()
 
-    def __init__(self, cfile, remdir):
+    def __init__(self, cfile, rem):
         super().__init__()
 
         self.config_file = cfile
-        self.dir_to_remove = remdir
+        self.remove_dir = rem
 
     @pyqtSlot()
     def execute(self):
         subprocess.run(['fs-uae', str(self.config_file)])
+
+        if self.remove_dir is not None and self.remove_dir.is_dir():
+            try:
+                self.__delete_dir(self.remove_dir)
+            except Exception:
+                sys.stderr.write('Could not delete temporary directory: \'' + str(self.remove_dir) + '\'\n')
+                traceback.print_exc(file=sys.stderr)
+
         self.exitSignal.emit()
+
+    def __delete_dir(self, path):
+        for sub in path.iterdir():
+            if sub.is_dir():
+                self.__delete_dir(sub)
+            else:
+                sub.unlink()
+        path.rmdir()
 
 
 def get_info(file, load_extras=False):
@@ -252,14 +269,15 @@ def __delete_dir(path):
     path.rmdir()
 
 
-def run_from_temp(rp9_file, temp_dir):
+def run_from_temp(rp9_file, config):
     info = get_info(rp9_file)
-    __check_dir(temp_dir)
-    config_file = __extract_and_write_config(rp9_file, info, temp_dir, override=True)
-    return Rp9ProcessWorker(config_file, None)
+    media_base_dir = Path(config.temp_dir)
+    __check_dir(media_base_dir)
+    config_file = __extract_and_write_config(rp9_file, info, config, media_base_dir, temporary=True)
+    return Rp9ProcessWorker(config_file, config_file.parent)
 
 
-def __extract_and_write_config(rp9_file, info, media_base_dir, override=False):
+def __extract_and_write_config(rp9_file, info, config, media_base_dir, temporary=False):
 
     # pre check
     if info.media is None or len(info.media) == 0:
@@ -276,11 +294,13 @@ def __extract_and_write_config(rp9_file, info, media_base_dir, override=False):
         else:
             raise Rp9UtilException(_('The rp9 file contains an unsupported media type!'))
 
-    boot_hdfs = {
-        '135': '/home/jens/Dokumente/FS-UAE/Hard Drives/workbench-135.hdf',
-        '211': '/home/jens/Dokumente/FS-UAE/Hard Drives/workbench-211.hdf',
-        '311': '/home/jens/Dokumente/FS-UAE/Hard Drives/workbench-311.hdf'
-    }
+    boot_hdfs = {}
+    if config.workbench_135_hd is not None and len(config.workbench_135_hd) > 0:
+        boot_hdfs['135'] = config.workbench_135_hd
+    if config.workbench_211_hd is not None and len(config.workbench_211_hd) > 0:
+        boot_hdfs['211'] = config.workbench_211_hd
+    if config.workbench_311_hd is not None and len(config.workbench_311_hd) > 0:
+        boot_hdfs['311'] = config.workbench_311_hd
 
     if info.configuration_hdf_boot is not None and len(info.configuration_hdf_boot) > 0 and \
             info.configuration_hdf_boot not in boot_hdfs:
@@ -295,12 +315,16 @@ def __extract_and_write_config(rp9_file, info, media_base_dir, override=False):
     else:
         media_name = info.description_title
 
-    media_dir = media_base_dir.joinpath(media_name)
+    # media_dir = None
+    if temporary:
+        media_dir = media_base_dir.joinpath('rp9unpacker_' + media_name)
+    else:
+        media_dir = media_base_dir.joinpath(media_name)
 
     if media_dir.is_file():
         raise Rp9UtilException(_('Couldn\'t extract files! Directory already exists as file.'))
 
-    if media_dir.is_dir() and override:
+    if media_dir.is_dir() and temporary:
         __delete_dir(media_dir)
         media_dir.mkdir()
     else:

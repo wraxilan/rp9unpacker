@@ -190,9 +190,10 @@ class SettingsDialog(QDialog):
 
 class Rp9Viewer(QFrame):
 
-    def __init__(self, *args):
+    def __init__(self, conf, *args):
         QFrame.__init__(self, *args)
 
+        self.config = conf
         self.worker = None
         self.thread = None
         self.rp9_file = None
@@ -293,7 +294,7 @@ class Rp9Viewer(QFrame):
                                     QMessageBox.Ok)
                 return
 
-            self.worker = util.run_from_temp(self.rp9_file, Path('/home/jens/tmp/rp9temp'))
+            self.worker = util.run_from_temp(self.rp9_file, self.config)
             self.thread = QThread()
             self.thread.started.connect(self.worker.execute)
             self.worker.moveToThread(self.thread)
@@ -435,7 +436,7 @@ class MainWindow(QMainWindow):
 
         # Widgets
         self.splitter = QSplitter(Qt.Horizontal)
-        self.rp9_viewer = Rp9Viewer()
+        self.rp9_viewer = Rp9Viewer(self.config)
         self.file_list = QListWidget()
         self.file_list.setSelectionMode(QAbstractItemView.SingleSelection)
         self.dir_button = QPushButton(QIcon.fromTheme('folder-open'), '', self)
@@ -490,13 +491,13 @@ class MainWindow(QMainWindow):
 
         result = dialog.exec_()
         if result == QDialog.Accepted:
-            self.config.fsuae_command = dialog.fsuae_command_edit.text()
-            self.config.fsuae_documents_dir = dialog.fsuae_documents_dir_edit.text()
-            self.config.fsuae_rp9_dir = dialog.fsuae_rp9_dir_edit.text()
-            self.config.temp_dir = dialog.temp_dir_edit.text()
-            self.config.workbench_135_hd = dialog.workbench_135_hd_edit.text()
-            self.config.workbench_211_hd = dialog.workbench_211_hd_edit.text()
-            self.config.workbench_311_hd = dialog.workbench_311_hd_edit.text()
+            self.config.fsuae_command = dialog.fsuae_command_edit.text().strip()
+            self.config.fsuae_documents_dir = dialog.fsuae_documents_dir_edit.text().strip()
+            self.config.fsuae_rp9_dir = dialog.fsuae_rp9_dir_edit.text().strip()
+            self.config.temp_dir = dialog.temp_dir_edit.text().strip()
+            self.config.workbench_135_hd = dialog.workbench_135_hd_edit.text().strip()
+            self.config.workbench_211_hd = dialog.workbench_211_hd_edit.text().strip()
+            self.config.workbench_311_hd = dialog.workbench_311_hd_edit.text().strip()
 
     @pyqtSlot()
     def select_dir(self):

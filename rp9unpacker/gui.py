@@ -288,13 +288,20 @@ class Rp9Viewer(QFrame):
 
     @pyqtSlot()
     def run_from_temp(self):
+        self.__run(True)
+
+    @pyqtSlot()
+    def run_from_config(self):
+        self.__run(True)
+
+    def __run(self, temporary):
         try:
             if self.thread is not None and self.thread.isRunning():
                 QMessageBox.warning(self, _('Run rp9'), _('The previous fs-uae process is still running.'),
                                     QMessageBox.Ok)
                 return
 
-            self.worker = util.run_from_temp(self.rp9_file, self.config)
+            self.worker = util.run(self.rp9_file, self.config, temporary)
             self.thread = QThread()
             self.thread.started.connect(self.worker.execute)
             self.worker.moveToThread(self.thread)
@@ -308,10 +315,6 @@ class Rp9Viewer(QFrame):
             sys.stderr.write('Could not run rp9 file: \'' + str(self.rp9_file) + '\'\n')
             traceback.print_exc(file=sys.stderr)
             QMessageBox.critical(self, _('Run rp9'), _('Error while trying to run rp9 file!'), QMessageBox.Ok)
-
-    @pyqtSlot()
-    def run_from_config(self):
-        print('run_from_config')
 
     @pyqtSlot()
     def write_config(self):

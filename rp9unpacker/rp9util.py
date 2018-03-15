@@ -269,17 +269,19 @@ def __delete_dir(path):
     path.rmdir()
 
 
-def run_from_temp(rp9_file, config):
+def run(rp9_file, config, temporary):
     info = get_info(rp9_file)
-    media_base_dir = Path(config.temp_dir)
-    __check_dir(media_base_dir)
-    config_file = __extract_and_write_config(rp9_file, info, config, media_base_dir, temporary=True)
+    config_file = __extract_and_write_config(rp9_file, info, config, temporary)
     return Rp9ProcessWorker(config_file, config_file.parent)
 
 
-def __extract_and_write_config(rp9_file, info, config, media_base_dir, temporary=False):
+def __extract_and_write_config(rp9_file, info, config, temporary):
 
     # pre check
+    if temporary:
+        media_base_dir = Path(config.temp_dir)
+        __check_dir(media_base_dir)
+
     if info.media is None or len(info.media) == 0:
         raise Rp9UtilException(_('The rp9 file as no media files!'))
 
@@ -324,11 +326,13 @@ def __extract_and_write_config(rp9_file, info, config, media_base_dir, temporary
     if media_dir.is_file():
         raise Rp9UtilException(_('Couldn\'t extract files! Directory already exists as file.'))
 
-    if media_dir.is_dir() and temporary:
-        __delete_dir(media_dir)
-        media_dir.mkdir()
-    else:
-        media_dir.mkdir()
+    if media_dir.is_dir():
+        if temporary:
+            __delete_dir(media_dir)
+        else:
+            raise Rp9UtilException(_('The RP9 was already extracted!'))
+
+    media_dir.mkdir()
 
     with ZipFile(str(rp9_file)) as zipfile:
         for media in info.media:

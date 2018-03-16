@@ -69,15 +69,16 @@ class Rp9Info:
 class Rp9ProcessWorker(QObject):
     exitSignal = pyqtSignal()
 
-    def __init__(self, cfile, rem):
+    def __init__(self, com, cfile, rem):
         super().__init__()
 
+        self.command = com
         self.config_file = cfile
         self.remove_dir = rem
 
     @pyqtSlot()
     def execute(self):
-        subprocess.run(['fs-uae', str(self.config_file)])
+        subprocess.run([str(self.command), str(self.config_file)])
 
         if self.remove_dir is not None and self.remove_dir.is_dir():
             try:
@@ -248,16 +249,55 @@ def __load_images(zipfile, info):
             traceback.print_exc(file=sys.stderr)
 
 
-def __check_dir(temp_path):
-    if temp_path.is_file():
+def __check_temp_dir(name):
+    if name is None or len(name) == 0:
+        raise Rp9UtilException(_('There is no temp directory configured!'))
+
+    path = Path(name)
+    if path.is_file():
         raise Rp9UtilException(_('The configured temp directory is an existing file!'))
 
-    if not temp_path.is_dir():
-        parent = temp_path.parent
+    if not path.is_dir():
+        parent = path.parent
         if parent.is_dir():
-            temp_path.mkdir()
+            path.mkdir()
         else:
             raise Rp9UtilException(_('The configured temp directory doesn\'t exist!'))
+
+    return path
+
+
+def __check_rp9_dir(name):
+    if name is None or len(name) == 0:
+        raise Rp9UtilException(_('There is no RP9 extraction directory configured!'))
+
+    path = Path(name)
+    if path.is_file():
+        raise Rp9UtilException(_('The configured RP9 extraction directory is an existing file!'))
+
+    if not path.is_dir():
+        parent = path.parent
+        if parent.is_dir():
+            path.mkdir()
+        else:
+            raise Rp9UtilException(_('The configured RP9 extraction directory doesn\'t exist!'))
+
+    return path
+
+
+def __check_fsuae_config_dir(name):
+    if name is None or len(name) == 0:
+        raise Rp9UtilException(_('There is no FS-UAE documents directory configured!'))
+
+    path = Path(name)
+    if path.is_file():
+        raise Rp9UtilException(_('The configured FS-UAE documents directory is an existing file!'))
+
+    path = path.joinpath('Configurations')
+    if not path.is_dir():
+        raise Rp9UtilException(_('The FS-UAE configurations directory was not found!'))
+
+    return path
 
 
 def __delete_dir(path):
@@ -271,16 +311,29 @@ def __delete_dir(path):
 
 def run(rp9_file, config, temporary):
     info = get_info(rp9_file)
+
+    if config.fsuae_command is None or len(config.fsuae_command) == 0:
+        raise Rp9UtilException(_('The FS-UAE command is not configured!'))
+    command = Path(config.fsuae_command)
+    if not command.is_file():
+        raise Rp9UtilException(_('The configured FS-UAE command was not found!'))
+
     config_file = __extract_and_write_config(rp9_file, info, config, temporary)
-    return Rp9ProcessWorker(config_file, config_file.parent)
+    if temporary:
+        return Rp9ProcessWorker(command, config_file, config_file.parent)
+    else:
+        return Rp9ProcessWorker(command, config_file, None)
 
 
 def __extract_and_write_config(rp9_file, info, config, temporary):
 
     # pre check
     if temporary:
-        media_base_dir = Path(config.temp_dir)
-        __check_dir(media_base_dir)
+        media_base_dir = __check_temp_dir(config.temp_dir)
+        config_dir = media_base_dir
+    else:
+        media_base_dir = __check_rp9_dir(config.fsuae_rp9_dir)
+        config_dir = __check_fsuae_config_dir(config.fsuae_documents_dir)
 
     if info.media is None or len(info.media) == 0:
         raise Rp9UtilException(_('The rp9 file as no media files!'))
@@ -330,7 +383,7 @@ def __extract_and_write_config(rp9_file, info, config, temporary):
         if temporary:
             __delete_dir(media_dir)
         else:
-            raise Rp9UtilException(_('The RP9 was already extracted!'))
+            raise Rp9UtilException(_('This RP9 is already extracted!'))
 
     media_dir.mkdir()
 
@@ -341,7 +394,13 @@ def __extract_and_write_config(rp9_file, info, config, temporary):
                 zipfile.extract(media.name, media_dir)
 
     # write config
-    config_file = media_dir.joinpath(media_name + '.fs-uae')
+    if temporary:
+        config_file = media_dir.joinpath(media_name + '.fs-uae')
+    else:
+        config_file = config_dir.joinpath(media_name + '.fs-uae')
+        if config_file.exists():
+            raise Rp9UtilException(_('This RP9 configuration already exists!'))
+
     with open(str(config_file), 'w', encoding='utf-8') as config:
         config.write('# FS-UAE configuration saved by rp9UnpAckEr\n\n')
         config.write('[fs-uae]\n')

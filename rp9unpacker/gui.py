@@ -292,7 +292,7 @@ class Rp9Viewer(QFrame):
 
     @pyqtSlot()
     def run_from_config(self):
-        self.__run(True)
+        self.__run(False)
 
     def __run(self, temporary):
         try:

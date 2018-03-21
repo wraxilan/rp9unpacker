@@ -309,7 +309,7 @@ def __delete_dir(path):
     path.rmdir()
 
 
-def run(rp9_file, config, temporary):
+def run(rp9_file, config, temporary, override=False):
     info = get_info(rp9_file)
 
     if config.fsuae_command is None or len(config.fsuae_command) == 0:
@@ -318,14 +318,29 @@ def run(rp9_file, config, temporary):
     if not command.is_file():
         raise Rp9UtilException(_('The configured FS-UAE command was not found!'))
 
-    config_file = __extract_and_write_config(rp9_file, info, config, temporary)
+    config_file = __extract_and_write_config(rp9_file, info, config, temporary, override)
     if temporary:
         return Rp9ProcessWorker(command, config_file, config_file.parent)
     else:
         return Rp9ProcessWorker(command, config_file, None)
 
 
-def __extract_and_write_config(rp9_file, info, config, temporary):
+def extract(rp9_file, config, override=False):
+    info = get_info(rp9_file)
+    __extract_and_write_config(rp9_file, info, config, False, override)
+
+
+def is_already_extracted(rp9_file, config):
+    info = get_info(rp9_file)
+    media_base_dir = __check_rp9_dir(config.fsuae_rp9_dir)
+    config_dir = __check_fsuae_config_dir(config.fsuae_documents_dir)
+    media_name = info.description_title
+    media_dir = media_base_dir.joinpath(media_name)
+    config_file = config_dir.joinpath(media_name + '.fs-uae')
+    return media_dir.is_dir() or config_file.exists()
+
+
+def __extract_and_write_config(rp9_file, info, config, temporary, override):
 
     # pre check
     if temporary:
@@ -380,10 +395,10 @@ def __extract_and_write_config(rp9_file, info, config, temporary):
         raise Rp9UtilException(_('Couldn\'t extract files! Directory already exists as file.'))
 
     if media_dir.is_dir():
-        if temporary:
+        if temporary or override:
             __delete_dir(media_dir)
         else:
-            raise Rp9UtilException(_('This RP9 is already extracted!'))
+            raise Rp9UtilException(_('This rp9 file is already extracted!'))
 
     media_dir.mkdir()
 
@@ -392,14 +407,16 @@ def __extract_and_write_config(rp9_file, info, config, temporary):
             media_file = media_dir.joinpath(media.name)
             if not media_file.is_file() and not media_file.is_dir() and not media_file.is_symlink():
                 zipfile.extract(media.name, media_dir)
+        if not temporary:
+            zipfile.extract('rp9-manifest.xml', media_dir)
 
     # write config
     if temporary:
         config_file = media_dir.joinpath(media_name + '.fs-uae')
     else:
         config_file = config_dir.joinpath(media_name + '.fs-uae')
-        if config_file.exists():
-            raise Rp9UtilException(_('This RP9 configuration already exists!'))
+        if config_file.exists() and not override:
+            raise Rp9UtilException(_('This rp9 configuration already exists!'))
 
     with open(str(config_file), 'w', encoding='utf-8') as config:
         config.write('# FS-UAE configuration saved by rp9UnpAckEr\n\n')
@@ -452,13 +469,11 @@ def __extract_and_write_config(rp9_file, info, config, temporary):
             config.write(' = ')
             config.write(str(media_dir.joinpath(floppy_list[i].name)))
             config.write('\n')
-            config.write('floppy_drive_' + str(i))
-            config.write('_sounds = off\n')
 
         config.write('floppy_drive_count = ')
         config.write(str(floppy_count))
         config.write('\n')
-        config.write('floppy_drive_speed = 800\n')
+        # config.write('floppy_drive_speed = 800\n')
         config.write('floppy_drive_volume_empty = 0\n')
 
         length = len(floppy_list)

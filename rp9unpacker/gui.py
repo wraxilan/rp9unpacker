@@ -75,9 +75,6 @@ class AboutDialog(QDialog):
         textedit.setStyleSheet('font: 9pt "Monospace"')
         dlglyt.addWidget(textedit)
 
-        # ok_button = QPushButton(QIcon.fromTheme('dialog-ok'), 'OK', self)
-        # ok_button.setSizePolicy(QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed))
-
         # button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         button_box = QDialogButtonBox(QDialogButtonBox.Ok)
         button_box.accepted.connect(self.accept)
@@ -269,9 +266,9 @@ class Rp9Viewer(QFrame):
         button_box = QDialogButtonBox()
         vbox.addWidget(button_box)
 
-        self.run_from_temp_button = button_box.addButton('Run in temporary configuration', QDialogButtonBox.NoRole)
-        self.run_from_config_button = button_box.addButton('Write configuration and run', QDialogButtonBox.NoRole)
-        self.write_config_button = button_box.addButton('Write configuration', QDialogButtonBox.NoRole)
+        self.run_from_temp_button = button_box.addButton('Extract and run temporary', QDialogButtonBox.NoRole)
+        self.run_from_config_button = button_box.addButton('Extract and run ', QDialogButtonBox.NoRole)
+        self.write_config_button = button_box.addButton('Extract', QDialogButtonBox.NoRole)
 
         self.run_from_temp_button.clicked.connect(self.run_from_temp)
         self.run_from_config_button.clicked.connect(self.run_from_config)
@@ -292,16 +289,26 @@ class Rp9Viewer(QFrame):
 
     @pyqtSlot()
     def run_from_config(self):
-        self.__run(False)
+        override = False
+        if util.is_already_extracted(self.rp9_file, self.config):
+            choice = QMessageBox.question(self, _('Extract rp9'),
+                                          _('This rp9 file was already extracted. Override the existing files?'),
+                                          QMessageBox.Yes | QMessageBox.No)
+            if choice == QMessageBox.Yes:
+                override = True
+            else:
+                return
 
-    def __run(self, temporary):
+        self.__run(False, override)
+
+    def __run(self, temporary, override=False):
         try:
             if self.thread is not None and self.thread.isRunning():
                 QMessageBox.warning(self, _('Run rp9'), _('The previous fs-uae process is still running.'),
                                     QMessageBox.Ok)
                 return
 
-            self.worker = util.run(self.rp9_file, self.config, temporary)
+            self.worker = util.run(self.rp9_file, self.config, temporary, override)
             self.thread = QThread()
             self.thread.started.connect(self.worker.execute)
             self.worker.moveToThread(self.thread)
@@ -318,7 +325,19 @@ class Rp9Viewer(QFrame):
 
     @pyqtSlot()
     def write_config(self):
-        print('write_config')
+        override = False
+        if util.is_already_extracted(self.rp9_file, self.config):
+            choice = QMessageBox.question(self, _('Extract rp9'),
+                                          _('This rp9 file was already extracted. Override the existing files?'),
+                                          QMessageBox.Yes | QMessageBox.No)
+            if choice == QMessageBox.Yes:
+                override = True
+            else:
+                return
+
+        util.extract(self.rp9_file, self.config, override)
+        QMessageBox.warning(self, _('Extract rp9'), _('The rp9 file was successfully extracted.'),
+                            QMessageBox.Ok)
 
     @staticmethod
     def __label(name):

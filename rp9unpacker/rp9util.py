@@ -60,7 +60,13 @@ class Rp9Info:
         self.description_systemrom = None
         self.configuration_system = None
         self.configuration_floppy_count = 0
+        self.configuration_silent_drives = False
+        self.configuration_turbo_floppy = False
         self.configuration_hdf_boot = None
+        self.configuration_chip_ram = None
+        self.configuration_fast_ram = None
+        self.configuration_cpu = None
+        self.configuration_jit = False
         self.media = []
         self.embedded_help = []
         self.embedded_images = []
@@ -146,11 +152,35 @@ def __parse_configuration(configuration, info):
     for peripheral in peripherals:
         if peripheral.attrib.get('type', '') == 'dd' and peripheral.text == 'floppy':
             info.configuration_floppy_count = info.configuration_floppy_count + 1
+        elif peripheral.text ==  'silent-drives':
+            info.configuration_silent_drives = True
+        elif peripheral.text == 'cpu':
+            info.configuration_cpu = peripheral.attrib.get('type', None)
+
+    compatibilities = configuration.findall('{http://www.retroplatform.com}compatibility')
+    for compatibility in compatibilities:
+        if compatibility.text == 'turbo-floppy':
+            info.configuration_turbo_floppy = True
+        elif compatibility.text == 'jit':
+            info.configuration_jit = True
 
     boot = configuration.find('{http://www.retroplatform.com}boot')
     if boot is not None:
         if boot.attrib.get('type', '') == 'hdf':
             info.configuration_hdf_boot = boot.text
+
+    rams = configuration.findall('{http://www.retroplatform.com}ram')
+    for ram in rams:
+        if ram.attrib.get('type', '') == 'chip':
+            try:
+                info.configuration_chip_ram = int(int(ram.text) / 1024)
+            except ValueError:
+                pass  # ignore
+        if ram.attrib.get('type', '') == 'fast':
+            try:
+                info.configuration_fast_ram = int(int(ram.text) / 1024)
+            except ValueError:
+                pass  # ignore
 
 
 def __parse_description(description, info):
@@ -441,6 +471,23 @@ def __extract_and_write_config(rp9_file, info, config, temporary, override):
         config.write(models.get(info.configuration_system, 'a-500'))
         config.write('\n')
 
+        # write memory config
+        if info.configuration_chip_ram is not None and info.configuration_chip_ram > 0:
+            config.write('chip_memory = ')
+            config.write(str(info.configuration_chip_ram))
+            config.write('\n')
+
+        if info.configuration_fast_ram is not None and info.configuration_fast_ram > 0:
+            config.write('fast_memory = ')
+            config.write(str(info.configuration_fast_ram))
+            config.write('\n')
+
+        # write cpu config
+        if info.configuration_cpu is not None:
+            config.write('cpu = ')
+            config.write(info.configuration_cpu)
+            config.write('\n')
+
         # write harddisks
         offset = 0
         if info.configuration_hdf_boot is not None and len(info.configuration_hdf_boot) > 0:
@@ -469,11 +516,15 @@ def __extract_and_write_config(rp9_file, info, config, temporary, override):
             config.write(' = ')
             config.write(str(media_dir.joinpath(floppy_list[i].name)))
             config.write('\n')
+            if info.configuration_silent_drives:
+                config.write('floppy_drive_' + str(i))
+                config.write('_sounds = off\n')
 
         config.write('floppy_drive_count = ')
         config.write(str(floppy_count))
         config.write('\n')
-        # config.write('floppy_drive_speed = 800\n')
+        if info.configuration_turbo_floppy:
+            config.write('floppy_drive_speed = 800\n')
         config.write('floppy_drive_volume_empty = 0\n')
 
         length = len(floppy_list)
@@ -483,5 +534,9 @@ def __extract_and_write_config(rp9_file, info, config, temporary, override):
                 config.write(' = ')
                 config.write(str(media_dir.joinpath(floppy_list[i].name)))
                 config.write('\n')
+
+        # write misc stuff
+        if info.configuration_jit:
+            config.write('jit_compiler = 1\n')
 
     return config_file

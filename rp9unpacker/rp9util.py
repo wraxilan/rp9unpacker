@@ -65,6 +65,7 @@ class Rp9Info:
         self.configuration_hdf_boot = None
         self.configuration_chip_ram = None
         self.configuration_fast_ram = None
+        self.configuration_z3_ram = None
         self.configuration_cpu = None
         self.configuration_jit = False
         self.media = []
@@ -179,6 +180,11 @@ def __parse_configuration(configuration, info):
         if ram.attrib.get('type', '') == 'fast':
             try:
                 info.configuration_fast_ram = int(int(ram.text) / 1024)
+            except ValueError:
+                pass  # ignore
+        if ram.attrib.get('type', '') == 'z3':
+            try:
+                info.configuration_z3_ram = int(int(ram.text) / 1024)
             except ValueError:
                 pass  # ignore
 
@@ -480,6 +486,11 @@ def __extract_and_write_config(rp9_file, info, config, temporary, override):
         if info.configuration_fast_ram is not None and info.configuration_fast_ram > 0:
             config.write('fast_memory = ')
             config.write(str(info.configuration_fast_ram))
+            config.write('\n')
+
+        if info.configuration_z3_ram is not None and info.configuration_z3_ram > 0:
+            config.write('zorro_iii_memory = ')
+            config.write(str(info.configuration_z3_ram))
             config.write('\n')
 
         # write cpu config

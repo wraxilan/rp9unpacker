@@ -1,0 +1,74 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2018-03-28 15:10+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+msgid "This is not a valid rp9 file!"
+msgstr ""
+
+msgid "This is not a Amiga rp9 file!"
+msgstr ""
+
+msgid "There is no temp directory configured!"
+msgstr ""
+
+msgid "The configured temp directory is an existing file!"
+msgstr ""
+
+msgid "The configured temp directory doesn't exist!"
+msgstr ""
+
+msgid "There is no RP9 extraction directory configured!"
+msgstr ""
+
+msgid "The configured RP9 extraction directory is an existing file!"
+msgstr ""
+
+msgid "The configured RP9 extraction directory doesn't exist!"
+msgstr ""
+
+msgid "There is no FS-UAE documents directory configured!"
+msgstr ""
+
+msgid "The configured FS-UAE documents directory is an existing file!"
+msgstr ""
+
+msgid "The FS-UAE configurations directory was not found!"
+msgstr ""
+
+msgid "The FS-UAE command is not configured!"
+msgstr ""
+
+msgid "The configured FS-UAE command was not found!"
+msgstr ""
+
+msgid "The rp9 file as no media files!"
+msgstr ""
+
+msgid "The rp9 file contains an unsupported media type!"
+msgstr ""
+
+msgid "The rp9 file contains an unsupported boot harddisk!"
+msgstr ""
+
+msgid "Couldn't extract files! Directory already exists as file."
+msgstr ""
+
+msgid "This rp9 file is already extracted!"
+msgstr ""
+
+msgid "This rp9 configuration already exists!"
+msgstr ""
+

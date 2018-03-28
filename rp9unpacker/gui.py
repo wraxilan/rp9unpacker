@@ -266,9 +266,9 @@ class Rp9Viewer(QFrame):
         button_box = QDialogButtonBox()
         vbox.addWidget(button_box)
 
-        self.run_from_temp_button = button_box.addButton('Extract and run temporary', QDialogButtonBox.NoRole)
-        self.run_from_config_button = button_box.addButton('Extract and run ', QDialogButtonBox.NoRole)
-        self.write_config_button = button_box.addButton('Extract', QDialogButtonBox.NoRole)
+        self.run_from_temp_button = button_box.addButton(_('Extract and run temporary'), QDialogButtonBox.NoRole)
+        self.run_from_config_button = button_box.addButton(_('Extract and run'), QDialogButtonBox.NoRole)
+        self.write_config_button = button_box.addButton(_('Extract'), QDialogButtonBox.NoRole)
 
         self.run_from_temp_button.clicked.connect(self.run_from_temp)
         self.run_from_config_button.clicked.connect(self.run_from_config)
@@ -289,17 +289,21 @@ class Rp9Viewer(QFrame):
 
     @pyqtSlot()
     def run_from_config(self):
-        override = False
-        if util.is_already_extracted(self.rp9_file, self.config):
-            choice = QMessageBox.question(self, _('Extract rp9'),
-                                          _('This rp9 file was already extracted. Override the existing files?'),
-                                          QMessageBox.Yes | QMessageBox.No)
-            if choice == QMessageBox.Yes:
-                override = True
-            else:
-                return
+        try:
+            override = False
+            if util.is_already_extracted(self.rp9_file, self.config):
+                choice = QMessageBox.question(self, _('Extract rp9'),
+                                              _('This rp9 file was already extracted. Override the existing files?'),
+                                              QMessageBox.Yes | QMessageBox.No)
+                if choice == QMessageBox.Yes:
+                    override = True
+                else:
+                    return
 
-        self.__run(False, override)
+            self.__run(False, override)
+
+        except util.Rp9UtilException as ex:
+            QMessageBox.critical(self, _('Run rp9'), str(ex), QMessageBox.Ok)
 
     def __run(self, temporary, override=False):
         try:
@@ -325,19 +329,23 @@ class Rp9Viewer(QFrame):
 
     @pyqtSlot()
     def write_config(self):
-        override = False
-        if util.is_already_extracted(self.rp9_file, self.config):
-            choice = QMessageBox.question(self, _('Extract rp9'),
-                                          _('This rp9 file was already extracted. Override the existing files?'),
-                                          QMessageBox.Yes | QMessageBox.No)
-            if choice == QMessageBox.Yes:
-                override = True
-            else:
-                return
+        try:
+            override = False
+            if util.is_already_extracted(self.rp9_file, self.config):
+                choice = QMessageBox.question(self, _('Extract rp9'),
+                                              _('This rp9 file was already extracted. Override the existing files?'),
+                                              QMessageBox.Yes | QMessageBox.No)
+                if choice == QMessageBox.Yes:
+                    override = True
+                else:
+                    return
 
-        util.extract(self.rp9_file, self.config, override)
-        QMessageBox.warning(self, _('Extract rp9'), _('The rp9 file was successfully extracted.'),
-                            QMessageBox.Ok)
+            util.extract(self.rp9_file, self.config, override)
+            QMessageBox.warning(self, _('Extract rp9'), _('The rp9 file was successfully extracted.'),
+                                QMessageBox.Ok)
+
+        except util.Rp9UtilException as ex:
+            QMessageBox.critical(self, _('Run rp9'), str(ex), QMessageBox.Ok)
 
     @staticmethod
     def __label(name):
@@ -462,7 +470,7 @@ class MainWindow(QMainWindow):
         self.file_list = QListWidget()
         self.file_list.setSelectionMode(QAbstractItemView.SingleSelection)
         self.dir_button = QPushButton(QIcon.fromTheme('folder-open'), '', self)
-        self.show_hidden_check = QCheckBox('Show hidden files', self)
+        self.show_hidden_check = QCheckBox(_('Show hidden files'), self)
 
         # Connects
         self.dir_button.clicked.connect(self.select_dir)

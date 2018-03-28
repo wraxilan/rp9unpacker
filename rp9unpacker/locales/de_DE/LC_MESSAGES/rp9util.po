@@ -1,0 +1,74 @@
+# German translations for rp package.
+# Copyright (C) 2018 ORGANIZATION
+# Automatically generated, 2018.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: rp 9unpacker\n"
+"POT-Creation-Date: 2018-03-28 15:10+0200\n"
+"PO-Revision-Date: 2018-03-28 15:10+0200\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"Language: de\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "This is not a valid rp9 file!"
+msgstr "Das ist keine gültige RP9-Datei!"
+
+msgid "This is not a Amiga rp9 file!"
+msgstr "Das ist keine RP9-Datei für Amiga!"
+
+msgid "There is no temp directory configured!"
+msgstr "Es ist kein Temp-Verzeichnis konfiguriert!"
+
+msgid "The configured temp directory is an existing file!"
+msgstr "Das konfigurierte Temp-Verzeichnis ist eine Datei!"
+
+msgid "The configured temp directory doesn't exist!"
+msgstr "Das konfigurierte Temp-Verzeichnis existiert nicht!"
+
+msgid "There is no RP9 extraction directory configured!"
+msgstr "Es ist kein RP9-Auspackverzeichnis konfiguriert!"
+
+msgid "The configured RP9 extraction directory is an existing file!"
+msgstr "Das konfigurierte RP9-Auspackverzeichnis ist eine Datei!"
+
+msgid "The configured RP9 extraction directory doesn't exist!"
+msgstr "Das konfigurierte RP9-Auspackverzeichnis existiert nicht!"
+
+msgid "There is no FS-UAE documents directory configured!"
+msgstr "Es ist kein FS-UAE-Dokumentenverzeichnis konfiguriert!"
+
+msgid "The configured FS-UAE documents directory is an existing file!"
+msgstr "Das konfigurierte FS-UAE-Dokumentenverzeichnis ist eine Datei!"
+
+msgid "The FS-UAE configurations directory was not found!"
+msgstr "Das konfigurierte FS-UAE-Dokumentenverzeichnis existiert nicht!"
+
+msgid "The FS-UAE command is not configured!"
+msgstr "Es ist kein FS-UAE-Befehl konfiguriert!"
+
+msgid "The configured FS-UAE command was not found!"
+msgstr "Der konfigurierte FS-UAE-Befehl wurde nicht gefunden!"
+
+msgid "The rp9 file as no media files!"
+msgstr "Die RP9-Datei enthält keine Medien!"
+
+msgid "The rp9 file contains an unsupported media type!"
+msgstr "Die RP9-Datei enthält nicht unterstützte Medien!"
+
+msgid "The rp9 file contains an unsupported boot harddisk!"
+msgstr "Die RP9-Datei enthält eine nicht unterstützte Boot-Festplatte!"
+
+msgid "Couldn't extract files! Directory already exists as file."
+msgstr "Die RP9-Datei konnte nicht ausgepackt werden! Die Verzeichnis existiert bereits als Datei."
+
+msgid "This rp9 file is already extracted!"
+msgstr "Die RP9-Datei wurde bereits ausgepackt!"
+
+msgid "This rp9 configuration already exists!"
+msgstr "Die RP9-Konfiguration existiert bereits!"

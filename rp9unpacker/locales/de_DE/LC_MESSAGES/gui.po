@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: rp 9unpacker\n"
-"POT-Creation-Date: 2018-01-26 16:44+0100\n"
+"POT-Creation-Date: 2018-03-28 15:31+0200\n"
 "PO-Revision-Date: 2018-01-26 16:20+0100\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -16,8 +16,11 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+msgid "About rp9UnpAckEr for FS-UAE"
+msgstr "Über rp9UnpAckEr für FS-UAE"
+
 msgid "rp9UnpAckEr for FS-UAE"
-msgstr ""
+msgstr "rp9UnpAckEr für FS-UAE"
 
 msgid "Copyright © 2018 Jens Kieselbach"
 msgstr ""
@@ -25,20 +28,118 @@ msgstr ""
 msgid "Settings"
 msgstr "Einstellungen"
 
-msgid "Exit"
+msgid "FS-UAE command:"
+msgstr "FS-UAE-Befehl:"
+
+msgid "FS-UAE documents directory:"
+msgstr "FS-UAE-Dokumentenverzeichnis:"
+
+msgid "RP9 extraction directory:"
+msgstr "RP9-Auspackverzeichnis:"
+
+msgid "Temp directory:"
+msgstr "Temp-Verzeichnis:"
+
+msgid "Workbench-135 harddisk:"
+msgstr "Workbench-135 Festplatte:"
+
+msgid "Workbench-211 harddisk:"
+msgstr "Workbench-211 Festplatte:"
+
+msgid "Workbench-311 harddisk:"
+msgstr "Workbench-311 Festplatte:"
+
+msgid "Name"
 msgstr ""
 
-msgid "File"
+msgid "Priority"
+msgstr "Priorität"
+
+msgid "Type"
+msgstr "Typ"
+
+msgid "Title:"
+msgstr "Titel:"
+
+msgid "System:"
 msgstr ""
+
+msgid "Publisher:"
+msgstr ""
+
+msgid "Type:"
+msgstr "Typ:"
+
+msgid "Genre:"
+msgstr ""
+
+msgid "Year:"
+msgstr "Jahr:"
+
+msgid "Language:"
+msgstr "Sprache:"
+
+msgid "Rating:"
+msgstr "Bewertung:"
+
+msgid "System-ROM:"
+msgstr ""
+
+msgid "Help:"
+msgstr "Hilfe:"
+
+msgid "Media:"
+msgstr "Medien:"
+
+msgid "Images:"
+msgstr "Bilder:"
+
+msgid "Extract and run temporary"
+msgstr "Auspacken und temporär ausführen"
+
+msgid "Extract and run"
+msgstr "Auspacken und ausführen"
+
+msgid "Extract"
+msgstr "Auspacken"
+
+msgid "Extract rp9"
+msgstr "RP9 auspacken"
+
+msgid "This rp9 file was already extracted. Override the existing files?"
+msgstr ""
+"Diese RP9-Datei wurde bereits ausgepackt. Sollen die vorhandenen Dateien "
+"überschrieben werden?"
+
+msgid "The previous fs-uae process is still running."
+msgstr "Der vorherige FS-UAE-Prozess läuft noch."
+
+msgid "Run rp9"
+msgstr "RP9 ausführen"
+
+msgid "Error while trying to run rp9 file!"
+msgstr "Beim Verusch die RP9-Datei zu starten, ist ein Fehler aufgetreten!"
+
+msgid "The rp9 file was successfully extracted."
+msgstr "Die RP9-Datei wurde erfogreich ausgepackt."
+
+msgid "Open rp9"
+msgstr "RP9 öffnen"
+
+msgid "This is not a valid rp9 file!"
+msgstr "Das ist keine gültige RP9-Datei!"
+
+msgid "Exit"
+msgstr "Beenden"
+
+msgid "Program"
+msgstr "Programm"
 
 msgid "About"
-msgstr ""
+msgstr "Über"
 
 msgid "Help"
-msgstr ""
+msgstr "Hilfe"
 
-msgid "Hello World!"
-msgstr ""
-
-msgid "Update"
-msgstr ""
+msgid "Show hidden files"
+msgstr "Versteckte Dateien anzeigen"

@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2018-01-26 16:44+0100\n"
+"POT-Creation-Date: 2018-03-28 15:31+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,6 +14,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 
+
+msgid "About rp9UnpAckEr for FS-UAE"
+msgstr ""
 
 msgid "rp9UnpAckEr for FS-UAE"
 msgstr ""
@@ -24,10 +27,109 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
+msgid "FS-UAE command:"
+msgstr ""
+
+msgid "FS-UAE documents directory:"
+msgstr ""
+
+msgid "RP9 extraction directory:"
+msgstr ""
+
+msgid "Temp directory:"
+msgstr ""
+
+msgid "Workbench-135 harddisk:"
+msgstr ""
+
+msgid "Workbench-211 harddisk:"
+msgstr ""
+
+msgid "Workbench-311 harddisk:"
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "Priority"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "Title:"
+msgstr ""
+
+msgid "System:"
+msgstr ""
+
+msgid "Publisher:"
+msgstr ""
+
+msgid "Type:"
+msgstr ""
+
+msgid "Genre:"
+msgstr ""
+
+msgid "Year:"
+msgstr ""
+
+msgid "Language:"
+msgstr ""
+
+msgid "Rating:"
+msgstr ""
+
+msgid "System-ROM:"
+msgstr ""
+
+msgid "Help:"
+msgstr ""
+
+msgid "Media:"
+msgstr ""
+
+msgid "Images:"
+msgstr ""
+
+msgid "Extract and run temporary"
+msgstr ""
+
+msgid "Extract and run"
+msgstr ""
+
+msgid "Extract"
+msgstr ""
+
+msgid "Extract rp9"
+msgstr ""
+
+msgid "This rp9 file was already extracted. Override the existing files?"
+msgstr ""
+
+msgid "The previous fs-uae process is still running."
+msgstr ""
+
+msgid "Run rp9"
+msgstr ""
+
+msgid "Error while trying to run rp9 file!"
+msgstr ""
+
+msgid "The rp9 file was successfully extracted."
+msgstr ""
+
+msgid "Open rp9"
+msgstr ""
+
+msgid "This is not a valid rp9 file!"
+msgstr ""
+
 msgid "Exit"
 msgstr ""
 
-msgid "File"
+msgid "Program"
 msgstr ""
 
 msgid "About"
@@ -36,9 +138,6 @@ msgstr ""
 msgid "Help"
 msgstr ""
 
-msgid "Hello World!"
-msgstr ""
-
-msgid "Update"
+msgid "Show hidden files"
 msgstr ""
 

@@ -1,7 +1,7 @@
 # rp9unpacker
 rp9UnpAckEr unpacks rp9 archives containing amiga files, so the can be used with FS-UAE.
 
-This project is just my personal playground, but feel free to use it. Maybe the program useful to you, but it comes without any warranty.
+This project is just my personal playground, but feel free to use it. Maybe the program is useful to you, but it comes without any warranty.
 
 Tested on linux only.
 

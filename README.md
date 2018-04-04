@@ -11,7 +11,7 @@ Tested on linux only.
 - FS-UAE
 
 ## Installation
-Just clone the github repository an run rp9unpacker.
+Just clone the github repository and run rp9unpacker.
 
     $ git clone https://github.com/wraxilan/rp9unpacker
     $ cd rp9unpacker/rp9unpacker/

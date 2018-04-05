@@ -56,7 +56,7 @@ class AboutDialog(QDialog):
         appstr = _('rp9UnpAckEr for FS-UAE')
         l1 = QLabel(appstr + ' ' + const.VERSION)
         l1.setStyleSheet('font: bold')
-        l2 = QLabel(_('Copyright © 2018 Jens Kieselbach'))
+        l2 = QLabel(_('Copyright © Jens Kieselbach'))
         textlyt.addWidget(l1)
         textlyt.addWidget(l2)
         infolyt.addStretch()
@@ -75,7 +75,6 @@ class AboutDialog(QDialog):
         textedit.setStyleSheet('font: 9pt "Monospace"')
         dlglyt.addWidget(textedit)
 
-        # button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         button_box = QDialogButtonBox(QDialogButtonBox.Ok)
         button_box.accepted.connect(self.accept)
         dlglyt.addWidget(button_box)
